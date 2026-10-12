@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { reloadPage } from './navigation';
 
 async function storedAttempts(page: Page) {
   return page.evaluate(() => {
@@ -37,6 +38,7 @@ test('Start content is private, repeated clicks create one attempt, and replacem
   expect(await page.locator('.option-label').allTextContents()).toEqual(bank.questions[0].options.map((option: { id: string }) => option.id));
 
   await page.getByRole('button', { name: 'Attempt history' }).click();
+  await page.getByRole('button', { name: 'Go to attempt history' }).click();
   await page.getByRole('button', { name: 'Start another exam' }).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('dialog', { name: 'Start another exam?' })).toBeVisible();
@@ -68,7 +70,7 @@ test('refresh recovery retains answers, flags, position, snapshot and deadline',
   await page.getByRole('button', { name: 'Next' }).click();
   const before = (await storedAttempts(page))[0];
   await page.route('**/question-bank.json', route => route.fulfill({ status: 503 }));
-  await page.reload();
+  await reloadPage(page);
   await expect(page.getByRole('button', { name: 'Start another exam' })).toBeDisabled();
   await page.getByRole('button', { name: 'Resume attempt' }).click();
   await expect(page.getByRole('heading', { name: 'Question 2 of 60', exact: true })).toBeVisible();
@@ -85,6 +87,7 @@ test('resuming an expired attempt submits once and opens its original report', a
   await page.locator('input[name="answer-Q1"]').first().check();
   await page.getByRole('button', { name: 'Flag for review' }).click();
   await page.getByRole('button', { name: 'Attempt history' }).click();
+  await page.getByRole('button', { name: 'Go to attempt history' }).click();
   await page.evaluate(() => {
     const id = JSON.parse(localStorage.getItem('pcao-f:attempt-ids:v1')!)[0];
     const key = 'pcao-f:attempt:v1:' + id;
@@ -94,7 +97,7 @@ test('resuming an expired attempt submits once and opens its original report', a
     localStorage.setItem(key, JSON.stringify(saved));
   });
   const expired = (await storedAttempts(page))[0];
-  await page.reload();
+  await reloadPage(page);
   await expect(page.getByRole('heading', { name: 'Your results' })).toBeVisible();
   const submitted = (await storedAttempts(page))[0];
   expect(submitted.status).toBe('submitted');
@@ -103,7 +106,7 @@ test('resuming an expired attempt submits once and opens its original report', a
   expect(submitted.answers).toEqual(expired.answers);
   expect(submitted.flags).toEqual(expired.flags);
   expect(submitted.deadlineAt).toEqual(expired.deadlineAt);
-  await page.reload();
+  await reloadPage(page);
   await expect(page.locator('.history-row')).toContainText('Completed');
   await expect(page.locator('.history-row')).toContainText('Practice score');
   await page.getByRole('button', { name: 'Open report' }).click();
@@ -125,7 +128,7 @@ test('old reports retain original grading and content after bank changes', async
   newer.questions[0].stemMarkdown = 'Modified bank content for browser testing only.';
   newer.questions[0].correctOptionIds = [bank.questions[0].options.find((option: { id: string }) => !bank.questions[0].correctOptionIds.includes(option.id)).id];
   await page.route('**/question-bank.json', route => route.fulfill({ json: newer }));
-  await page.reload();
+  await reloadPage(page);
   await expect(page.locator('.history-row')).toContainText('Practice score 17 / 1000 · 1 / 60 correct');
   await expect(page.locator('.history-row')).toContainText('Completed');
   await page.screenshot({ path: 'screenshots/start-history-1366.png', fullPage: true });
@@ -143,9 +146,11 @@ test('loading and invalid data disable real attempts without item-level validati
   await page.route('**/question-bank.json', async route => { await pending; await route.fulfill({ json: bank }); });
   await page.goto('/');
   await expect(page.getByRole('status')).toContainText('Loading the reviewed');
+  await expect(page.locator('.status-badge')).toHaveText('Loading');
   await expect(page.getByRole('button', { name: 'Start exam', exact: true })).toBeDisabled();
   release();
   await expect(page.getByRole('button', { name: 'Start exam', exact: true })).toBeEnabled();
+  await expect(page.locator('.status-badge')).toHaveText('Ready');
   await page.unroute('**/question-bank.json');
   for (const change of [
     { ...bank, contentStatus: 'synthetic' },
@@ -153,8 +158,9 @@ test('loading and invalid data disable real attempts without item-level validati
     { ...bank, questions: bank.questions.map((question: object, index: number) => index === 0 ? { ...question, correctOptionIds: [] } : question) },
   ]) {
     await page.route('**/question-bank.json', route => route.fulfill({ json: change }));
-    await page.reload();
+    await reloadPage(page);
     await expect(page.getByRole('alert')).toContainText('unavailable or incomplete');
+    await expect(page.locator('.status-badge')).toHaveText('Unavailable');
     await expect(page.getByRole('button', { name: 'Start exam', exact: true })).toBeDisabled();
     await expect(page.locator('main')).not.toContainText('Question Q1');
     expect(await storedAttempts(page)).toEqual([]);
@@ -203,6 +209,7 @@ test('Start and its confirmation remain accessible with enlarged text', async ({
   await page.getByRole('button', { name: 'Start exam', exact: true }).focus();
   await page.keyboard.press('Enter');
   await page.getByRole('button', { name: 'Attempt history' }).click();
+  await page.getByRole('button', { name: 'Go to attempt history' }).click();
   await page.screenshot({ path: 'screenshots/start-enlarged-320.png', fullPage: true });
   await page.getByRole('button', { name: 'Start another exam' }).click();
   await expect(page.getByRole('button', { name: 'Abandon and start exam' })).toBeVisible();

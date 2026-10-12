@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { reloadPage } from './navigation';
 
 async function storedAttempt(page: Page) {
   return page.evaluate(() => {
@@ -37,7 +38,7 @@ test('complete means required cardinality, partial answers persist, and checkbox
   expect(partial.currentQuestionId).toBe('Q4');
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   expect((await storedAttempt(page)).currentQuestionId).toBe('Q5');
-  await page.reload();
+  await reloadPage(page);
   await page.getByRole('button', { name: 'Resume attempt' }).click();
   await expect(page.getByRole('heading', { name: 'Question 5 of 60' })).toBeFocused();
   await page.getByRole('button', { name: 'Previous', exact: true }).click();
@@ -121,7 +122,7 @@ test('interval expiry continues in review and answers cannot change after the de
   await page.clock.fastForward(120 * 60_000);
   await expect(page.getByRole('heading', { name: 'Your results' })).toBeVisible();
   expect((await storedAttempt(page)).submissionReason).toBe('time expired');
-  await page.reload();
+  await reloadPage(page);
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
   const before = await storedAttempt(page);
   await page.clock.setSystemTime(before.deadlineAt);
@@ -136,7 +137,7 @@ test('refresh and reopening use the original deadline and auto-submit expired sa
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
   await page.getByRole('radio').first().check();
   const saved = await storedAttempt(page);
-  await page.reload();
+  await reloadPage(page);
   await page.getByRole('button', { name: 'Resume attempt' }).click();
   expect((await storedAttempt(page)).deadlineAt).toBe(saved.deadlineAt);
   await page.evaluate(() => {

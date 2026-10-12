@@ -53,12 +53,12 @@ Reopening an expired saved attempt → Shared finalization → Results
 | Responsive, keyboard, and touch behavior | Verified in Chromium at the recorded sizes |
 | TypeScript | Passed |
 | Unit tests | 35 passed across 7 files |
-| Browser tests | 60 passed in Chromium |
+| Browser tests | 74 Chromium cases passed (73 in full run + corrected touch rerun) |
 | Production build | Passed; generated output in `dist/` |
 | Current real-data integration prerequisites | None outstanding for the local app |
 | Publishing | Not performed |
 
-The latest full verification completed on **2026-10-12**. The current UI-update verification preview uses `http://127.0.0.1:4178`; the earlier Results preview used port 4177. This is a local preview, not a published deployment. Restart it with the commands in section 14 when needed.
+The latest QA-fix verification completed on **2026-10-12**: TypeScript, 35 unit tests, and build passed; the 74-case Chromium run passed 73 tests, and the one existing touch test passed on rerun after adding the new leave-confirmation interaction. The QA-fix checks used an isolated fresh production preview at `http://127.0.0.1:4180` (stopped after verification). The earlier UI-update preview used `http://127.0.0.1:4178`; the earlier Results preview used port 4177. This is a local preview, not a published deployment. Restart it with the commands in section 14 when needed.
 
 This record includes the current local UI update: consolidated unanswered status, a course-source drawer, and equal-weight practice scoring out of 1000 with practice Passed/Failed. Verification evidence for this update is recorded below.
 
@@ -267,11 +267,11 @@ Clicking a number closes review, saves the position, and focuses its question he
 
 ### Confirmation
 
-Submit exam opens concise confirmation showing one consolidated unanswered count, including questions without the required number of selections. Students may deliberately submit those responses. Correctness is not disclosed before finalization.
+Submit exam opens concise confirmation showing one consolidated unanswered count, including questions without the required number of selections, and a reminder for any flagged questions (including answered items). Students may deliberately submit those responses. Correctness is not disclosed before finalization.
 
 Confirming saves selections, submission metadata, and grade once, locks the record, and opens Results. Cancel returns to review. Escape closes review or returns from confirmation to review before finalization.
 
-The clock continues through both steps. Expiry takes precedence and finalizes without confirmation. A failed submission write remains visible within confirmation and allows retry.
+The clock continues through both steps. The modal shows the only visible countdown; the background header countdown is concealed until returning to the exam. Expiry takes precedence and finalizes without confirmation. A failed submission write remains visible within confirmation and allows retry.
 
 ### Dialog accessibility and mobile refinements
 
@@ -345,7 +345,8 @@ Verification covers keyboard interaction, table scrolling, touch, reduced motion
 | Failed answer/flag/navigation write | Error shown; unsuccessful UI change not committed |
 | Failed unfinished-attempt replacement | Prior records restored where storage permits; recovery feedback |
 | Damaged saved record | Rejected with an error |
-| Refresh during Exam | Resume restores selections, flags, position, snapshot, and deadline |
+| Refresh or browser navigation during an unexpired saved attempt | Native leave confirmation where supported; accepting reload returns home and Resume restores selections, flags, position, snapshot, and deadline |
+| Attempt history from Exam | Leave exam dialog warns that time continues; cancellation restores focus, confirmation preserves the attempt; home explicitly reminds that the timer runs |
 | Expired saved attempt | Shared finalization and Results |
 | Failed submission write | Confirmation error and retry |
 | Repeated submission/expiry events | Existing submitted record and result preserved |
@@ -356,18 +357,18 @@ Storage failures, damaged indexes, replacement rollback, and retry behavior have
 
 ## 11. Testing and verification
 
-### Latest full verification
+### Latest QA-fix verification
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| TypeScript | Exit 0 | `test-results/results-checks.txt` |
+| TypeScript | Exit 0 | `test-results/qa-audit-fix-checks.txt` |
 | Vitest | 35 passed; 7 files | Same log |
 | Production build | Exit 0 | Same log; `dist/` |
-| Playwright / Chromium | 60 passed | Same log |
+| Playwright / Chromium | 74 cases passed: 73 full-run passes, corrected touch test rerun passed | Same log |
 | Browser last-run state | Passed; no failed tests | `test-results/.last-run.json` |
 | Dataset/reference hashes | Match recorded values | Rechecked for this consolidation |
 
-The recorded build contains approximately **506.28 kB** minified JavaScript (**151.38 kB** gzip) and **18.43 kB** CSS (**4.59 kB** gzip). Vite's JavaScript chunk-size warning above 500 kB is nonblocking; the build succeeds.
+The recorded build contains approximately **507.54 kB** minified JavaScript (**151.67 kB** gzip) and **18.47 kB** CSS (**4.61 kB** gzip). Vite's JavaScript chunk-size warning above 500 kB is nonblocking; the build succeeds.
 
 ### Unit test inventory
 
@@ -392,7 +393,8 @@ The recorded build contains approximately **506.28 kB** minified JavaScript (**1
 | [tests/browser/review.spec.ts](tests/browser/review.spec.ts) | 11 | Statuses, flags, focus, jumps, cancellation, submission races/retries, and layouts |
 | [tests/browser/results.spec.ts](tests/browser/results.spec.ts) | 9 | Known totals, filters, explanations/sources, updated bank/new attempt, and six layouts |
 | [tests/browser/ui-update.spec.ts](tests/browser/ui-update.spec.ts) | 13 | Drawer layout/focus/links/scroll/dismissal/loading/retry/touch, unchanged storage, insufficient-selection refresh/grading, four legacy scores and original snapshots |
-| **Total** | **60** | |
+| [tests/browser/audit-fixes.spec.ts](tests/browser/audit-fixes.spec.ts) | 14 | Answered flags (0/1/multiple), native refresh/Back warnings, cancellation/recovery, six leave-dialog layouts, expiry and controlled elapsed-time checks |
+| **Total** | **74** | |
 
 The suite covers Start → Exam → Review → Results, refresh recovery, deadline expiry, saved reports, and a new attempt after a dataset update. Controlled clocks test expiry without waiting 120 real minutes.
 
@@ -404,10 +406,11 @@ The suite covers Start → Exam → Review → Results, refresh recovery, deadli
 | Review completion | 23 passed | 38 passed | TypeScript/build; review-specific 11-case and responsive 6-case reruns passed |
 | Results and full-flow completion | 28 passed | 47 passed | TypeScript/build and approved content integrity passed |
 | Course drawer and practice score update | 35 passed | 60 passed | TypeScript/build; source/course counts, threshold, persistence, accessibility and screenshots |
+| QA audit fixes | 35 passed | 74 cases passed across full run and touch rerun | TypeScript/build passed; native leave warnings, flags, one visible clock, loading and elapsed-time regressions |
 
-These are successive suite totals, not numbers to add together. Supplementary reruns repeat covered cases. Current 35/60 results supersede older totals.
+These are successive suite totals, not numbers to add together. Supplementary reruns repeat covered cases. Current 35/74 coverage supersedes the earlier 35/60 snapshot; the QA-fix full run had one outdated touch navigation expectation, corrected and passed on a focused rerun.
 
-Earlier reports reference `test-results/exam-checks.txt` and `test-results/review-checks.txt`; those raw logs are absent from the current output directory. Historical reports remain. The retained latest full log includes regressions for all implemented screens.
+Earlier reports reference `test-results/exam-checks.txt` and `test-results/review-checks.txt`; those raw logs are absent from the current output directory. Historical reports remain. The retained `results-checks.txt` preserves the earlier clean 60-case full run. Current QA-fix results and the corrected touch rerun are retained in `qa-audit-fix-checks.txt`.
 
 ### Fixes and environment notes
 
@@ -476,6 +479,7 @@ All families below are under `screenshots/`:
 | Exam table/quotation | `exam-table-{320,390,768,1366,landscape,enlarged}.png` |
 | Review grid | `review-submit-{320,390,768,1366,landscape,enlarged}.png` |
 | Confirmation | `submit-confirmation-{320,390,768,1366,landscape,enlarged}.png` |
+| Leave exam warning | `leave-exam-{320,390,768,1366,landscape,enlarged}.png` |
 | Results overview | `results-overview-{320,390,768,1366,landscape,enlarged}.png` |
 | Domains | `results-domains-{320,390,768,1366,landscape,enlarged}.png` |
 | Expanded question | `results-question-{320,390,768,1366,landscape,enlarged}.png` |
@@ -499,7 +503,8 @@ Direct examples:
 - [Domains mobile](screenshots/results-domains-320.png)
 - [Expanded question desktop](screenshots/results-question-1366.png)
 - [Sources enlarged](screenshots/results-sources-enlarged.png)
-- [Latest full verification log](test-results/results-checks.txt)
+- [QA-fix verification log](test-results/qa-audit-fix-checks.txt)
+- [Earlier clean full verification log](test-results/results-checks.txt)
 
 ## 14. Local setup and commands
 
@@ -589,7 +594,18 @@ Git is initialized locally on `main`; `origin` targets `https://github.com/Muham
 | [question-bank-validation-report.md](question-bank-validation-report.md) | Historical correction/content audit |
 | [README.md](README.md) | Quick local setup |
 | [package.json](package.json) and [package-lock.json](package-lock.json) | Commands and locked dependencies |
-| [test-results/results-checks.txt](test-results/results-checks.txt) | Retained full verification output |
+| [test-results/results-checks.txt](test-results/results-checks.txt) | Historical clean 60-case full verification |
+| [test-results/qa-audit-fix-checks.txt](test-results/qa-audit-fix-checks.txt) | Current QA-fix checks and corrected touch rerun |
 | [tests/fixtures/approved-question-content.md](tests/fixtures/approved-question-content.md) | Approved content reference |
 
 This unified record reconciles those documents with current source helpers, dataset statistics, hashes, lockfile, test inventory, and available evidence. Original reports remain unchanged. It does not replace runtime data or generate new question-review material.
+
+## QA audit fixes — 2026-10-12
+
+Addressed BUG-001 with a flagged-question reminder in final confirmation; BUG-002 with native beforeunload warnings for unfinished, unexpired saved attempts, a focus-managed leave-for-history dialog, and explicit home timer-running copy; BUG-003 by concealing the background countdown while a timed modal is open. The modal countdown remains accessible. Cancelling leaves the attempt unchanged; submission/expiry remove the warning, and expiry closes the leave dialog. Browser-native warnings use browser-supplied text and remain subject to browser support/user activation.
+
+BUG-004 was already correct: a held bank request shows Loading and disables Start, followed by Ready after successful validation; invalid data shows Unavailable. Regression assertions now cover those states. BUG-005 was not reproduced: controlled submission at 92.5 seconds shows 01:58:28 remaining and 00:01:32 used; submission at 103 seconds shows 01:58:17 remaining and 00:01:43 used. Saved report time does not grow during an additional 11 seconds after submission. No scoring, timestamp, schema, bank, or frozen-snapshot rules were changed.
+
+Verification: TypeScript, 35 Vitest tests, and build passed. The full 74-case Chromium run passed 73 cases; an existing touch test needed the new leave-confirmation tap, then passed its focused rerun. Six leave-dialog screenshots and updated review/confirmation captures were inspected at 320, 390, 768, 1366, landscape, and enlarged text; dialog bodies scroll where needed while heading/actions remain reachable. Bank checksum is unchanged.
+
+The sandbox denied Windows process cleanup, stalling initial browser runners. Final checks ran with permission outside the sandbox against the fresh preview on 4180; temporary runners/previews were stopped afterward. Use `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4180 --strictPort` and `node node_modules/@playwright/test/cli.js test --config test-results/qa-audit.playwright.config.ts` to repeat the browser checks. This fix is local; no deployment was performed during the QA-fix work.

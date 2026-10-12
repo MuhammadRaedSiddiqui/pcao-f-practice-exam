@@ -27,6 +27,7 @@ export function ReviewSubmitDialog({
     <p className="review-time" role="timer" aria-live="off" aria-label="Review time remaining">Time remaining: <strong>{remainingTime}</strong></p>
     {confirming ? <>
       <p>You have <strong>{unanswered} unanswered</strong> questions. This includes questions without the required number of selections. You can submit with these outstanding answers.</p>
+      {attempt.flags.length > 0 && <p>You have <strong>{attempt.flags.length} flagged {attempt.flags.length === 1 ? 'question' : 'questions'}</strong> to revisit before submitting.</p>}
       <p>Submit your saved selections now? You cannot change them after submission.</p>
     </> : <>
       <div className="review-summary" aria-label="Answer status counts">

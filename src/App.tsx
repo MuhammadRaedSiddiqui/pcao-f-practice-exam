@@ -47,6 +47,7 @@ export function App() {
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [view, setView] = useState<View>('start');
   const [reviewStage, setReviewStage] = useState<'review' | 'confirm' | null>(null);
+  const [leavingExam, setLeavingExam] = useState(false);
   const jumpFocus = useRef(false);
   const finalizedIds = useRef(new Set<string>());
   const [now, setNow] = useState(Date.now());
@@ -94,6 +95,18 @@ export function App() {
       window.removeEventListener('pageshow', tick);
     };
   }, [attempt?.id, attempt?.deadlineAt, attempt?.status]);
+
+  useEffect(() => {
+    if (!history.some(saved => saved.status === 'in-progress')) return;
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      if (!history.some(saved => saved.status === 'in-progress' && remainingMilliseconds(saved.deadlineAt) > 0)) return;
+      event.preventDefault();
+      // Browsers supply their own warning text; returnValue supports older browsers.
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+  }, [history]);
 
   useEffect(() => {
     if (view === 'exam') {
@@ -224,10 +237,26 @@ export function App() {
     finalizedIds.current.add(id);
     setAttempt(saved.attempt);
     setReviewStage(null);
+    setLeavingExam(false);
     setView('results');
     setMessage('');
     refreshHistory();
     window.scrollTo(0, 0);
+  }
+
+  function showHistory() {
+    setReviewStage(null);
+    setLeavingExam(false);
+    setView('start');
+    window.scrollTo(0, 0);
+  }
+
+  function requestHistory() {
+    if (view === 'exam' && attempt?.status === 'in-progress') {
+      if (canEdit()) setLeavingExam(true);
+      return;
+    }
+    showHistory();
   }
 
   function submit() {
@@ -249,7 +278,7 @@ export function App() {
       <Container>
         <div className="site-header__inner">
           <div className="brand"><span className="brand__mark" aria-hidden="true">P</span><span>PCAO-F <span className="brand__suffix">practice</span></span></div>
-          {view !== 'start' && <Button variant="quiet" onClick={() => { setReviewStage(null); setView('start'); window.scrollTo(0, 0); }}>Attempt history</Button>}
+          {view !== 'start' && <Button variant="quiet" onClick={requestHistory}>Attempt history</Button>}
         </div>
       </Container>
     </header>
@@ -258,7 +287,7 @@ export function App() {
         <p className="exam-bar__title">{attempt.snapshot.title}</p>
         <div className="exam-bar__metrics">
           <p className="answered-count"><strong>{completed} / {questions.length}</strong><span>answered</span></p>
-          <div className="timer" role="timer" aria-live="off" aria-label="Time remaining">
+          <div className={'timer' + (reviewStage || leavingExam ? ' timer--concealed' : '')} role="timer" aria-live="off" aria-label="Time remaining" aria-hidden={Boolean(reviewStage || leavingExam)}>
             <span>Time remaining</span><strong>{clock(remainingMilliseconds(attempt.deadlineAt, now))}</strong>
           </div>
         </div>
@@ -295,7 +324,7 @@ export function App() {
             {bankState.status === 'loading' && <p role="status">Loading the reviewed question bank…</p>}
             {bankState.status === 'error' && <div className="validation-message" role="alert"><p>The reviewed question bank is unavailable or incomplete. You cannot start a new exam yet.</p><p>Try loading it again. Saved attempts and reports use their original question bank.</p><Button onClick={() => { setBankState({ status: 'loading' }); void loadQuestionBank().then(setBankState); }}>Retry loading</Button></div>}
             {bankState.status === 'ready' && <p className="footnote">Dataset {bankState.bank.version} · Question and answer option order is fixed.</p>}
-            {unfinished.length > 0 && <p className="resume-note">You have an unfinished attempt. Resume with your saved answers, flags, and original deadline.</p>}
+            {unfinished.length > 0 && <p className="resume-note">You have an unfinished attempt. Your timer is still running. Resume with your saved answers, flags, and original deadline.</p>}
             <div className="card-actions">
               {unfinished.length === 1 && <Button variant="primary" onClick={() => openSaved(unfinished[0])}>Resume attempt</Button>}
               <Button variant={unfinished.length ? 'secondary' : 'primary'} disabled={!canStart} onClick={() => start()}>{unfinished.length ? 'Start another exam' : 'Start exam'}</Button>
@@ -362,6 +391,11 @@ export function App() {
             <Button disabled={questionIndex === questions.length - 1} onClick={() => navigate(questions[questionIndex + 1]?.id)}>Next</Button>
             <Button variant="primary" onClick={() => { if (canEdit()) setReviewStage('review'); }}>Review &amp; submit</Button>
           </nav>
+          {leavingExam && <Dialog open title="Leave exam?" onClose={() => setLeavingExam(false)}
+            actions={<><Button onClick={() => setLeavingExam(false)}>Stay in exam</Button><Button variant="primary" onClick={() => { if (canEdit()) showHistory(); }}>Go to attempt history</Button></>}>
+            <p>Your timer will keep running while you view attempt history. Your answers and flags are saved, and you can resume with the original deadline.</p>
+            <p className="review-time" role="timer" aria-live="off" aria-label="Time remaining">Time remaining: <strong>{clock(remainingMilliseconds(attempt.deadlineAt, now))}</strong></p>
+          </Dialog>}
           <ReviewSubmitDialog attempt={attempt} stage={reviewStage}
             remainingTime={clock(remainingMilliseconds(attempt.deadlineAt, now))}
             unanswered={unanswered} message={message}
@@ -375,7 +409,7 @@ export function App() {
 
         {view === 'results' && attempt?.status === 'submitted' && <ResultsPage key={attempt.id}
           attempt={attempt} headingRef={resultsHeading} canStart={canStart} onStart={() => start()}
-          onHistory={() => { setView('start'); window.scrollTo(0, 0); }} />}
+          onHistory={showHistory} />}
         {confirmation && <Dialog open title="Start another exam?" onClose={() => setConfirmation(null)}
           actions={<><Button onClick={() => setConfirmation(null)}>Keep unfinished attempt</Button><Button variant="primary" disabled={!canStart} onClick={() => start(confirmation.map(saved => saved.id))}>Abandon and start exam</Button></>}>
           <p>Starting another exam will permanently discard {confirmation.length === 1 ? 'your unfinished attempt' : 'your ' + confirmation.length + ' unfinished attempts'}, including saved answers and flags. No report will be created for it.</p>

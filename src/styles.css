@@ -90,6 +90,7 @@ h2 { margin: 0; font-size: clamp(21px, 2.5vw, 25px); line-height: 1.2; letter-sp
 .history-row__text span { color: #5b706a; font-size: 14px; }
 .footnote { margin-top: 18px; }
 .timer { display: grid; justify-items: end; flex: none; padding: 9px 13px; background: #eaf6f3; border: 1px solid #b9dcd3; border-radius: 10px; color: #0a625b; }
+.timer--concealed { visibility: hidden; }
 .timer span { font-size: 12px; font-weight: 700; }
 .timer strong { font-variant-numeric: tabular-nums; font-size: 20px; line-height: 1.2; }
 .progress-line { display: flex; justify-content: space-between; gap: 8px 20px; flex-wrap: wrap; margin-top: 15px; font-size: 14px; font-weight: 650; }

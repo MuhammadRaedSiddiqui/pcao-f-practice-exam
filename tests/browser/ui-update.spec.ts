@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { reloadPage } from './navigation';
 import type { QuestionBank } from '../../src/domain/bank';
 
 async function storage(page: Page) {
@@ -103,7 +104,7 @@ test('insufficient multiple selections remain unanswered after refresh and grade
   await page.getByRole('checkbox').first().check();
   await expect(page.locator('.answered-count strong')).toHaveText('0 / 60');
   const before = await storage(page);
-  await page.reload();
+  await reloadPage(page);
   await page.getByRole('button', { name: 'Resume attempt' }).click();
   await expect(page.getByRole('checkbox').first()).toBeChecked();
   await expect(page.locator('.selection-counter')).toContainText('1 of 2 selected');
@@ -163,7 +164,7 @@ for (const [correct, score, status] of [[0, 0, 'Failed'], [43, 717, 'Failed'], [
       await page.getByRole('button', { name: 'Open report' }).click();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
-    await page.reload();
+    await reloadPage(page);
     await page.getByRole('button', { name: 'Open report' }).click();
     await expect(page.locator('.result-number')).toHaveText(score + ' / 1000');
     expect(await storage(page)).toEqual(original);
@@ -178,6 +179,7 @@ test('touch source drawer preserves an unfinished attempt and original deadline'
   await page.getByRole('button', { name: 'Start exam', exact: true }).tap();
   await page.getByRole('radio').first().check();
   await page.getByRole('button', { name: 'Attempt history', exact: true }).tap();
+  await page.getByRole('button', { name: 'Go to attempt history' }).tap();
   const before = await storage(page);
   await page.getByRole('button', { name: 'Source courses' }).tap();
   const drawer = page.getByRole('dialog', { name: 'Courses used for this mock' });

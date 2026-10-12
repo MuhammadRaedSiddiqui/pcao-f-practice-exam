@@ -1,0 +1,212 @@
+QA audit fixes — 2026-10-12
+
+TypeScript
+
+Exit: 0
+
+Vitest
+
+ RUN  v5.0.3 C:/Users/HP/OneDrive/Desktop/PCAO-F
+
+ ✓ tests/bank.test.ts (5 tests) 89ms
+ ✓ tests/results.test.ts (9 tests) 108ms
+ ✓ tests/attempt.test.ts (15 tests) 451ms
+ ✓ tests/approvedContent.test.ts (1 test) 49ms
+ ✓ tests/courses.test.ts (2 tests) 62ms
+ ✓ tests/realBank.test.ts (2 tests) 56ms
+ ✓ tests/markdown.test.tsx (1 test) 52ms
+
+ Test Files  7 passed (7)
+      Tests  35 passed (35)
+   Start at  22:03:51
+   Duration  3.53s (import 63%, tests 18%, transform 16%, worker 2%)
+
+    Isolate  7 workers spawned · ~442ms startup each (spawn + environment, per file)
+             at least ~590ms faster with isolate: false — reuses workers across files instead of one per file
+
+
+Exit: 0
+
+Production build
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 372 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.49 kB │ gzip:   0.31 kB
+dist/assets/index-Bu8Ypmld.css   18.47 kB │ gzip:   4.61 kB
+dist/assets/index-CifIjrUO.js   507.54 kB │ gzip: 151.67 kB
+
+✓ built in 705ms
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+
+Exit: 0
+
+Focused Chromium audit regressions
+Error: Process from config.webServer was not able to start. Exit code: 1
+
+[WebServer] node:internal/modules/cjs/loader:1520
+[WebServer]   throw err;
+[WebServer]   ^
+[WebServer]
+[WebServer] Error: Cannot find module 'C:\Users\HP\OneDrive\Desktop\PCAO-F\test-results\node_modules\vite\bin\vite.js'
+[WebServer]     at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+[WebServer]     at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+[WebServer]     at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+[WebServer]     at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+[WebServer]     at Module._load (node:internal/modules/cjs/loader:1294:5)
+[WebServer]     at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+[WebServer]     at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+[WebServer]     at node:internal/main/run_main_module:33:47 {
+[WebServer]   code: 'MODULE_NOT_FOUND',
+[WebServer]   requireStack: []
+[WebServer] }
+[WebServer]
+[WebServer] Node.js v24.18.0
+
+Exit: 1
+
+Full Chromium regression run (outside sandbox; output excerpt starts after the first three passing cases)
+  ok  4 tests\browser\audit-fixes.spec.ts:11:3 › confirmation reminds about answered flagged questions: 2 (2.5s)
+  ok  5 tests\browser\exam.spec.ts:67:1 › deadline catches up after suspended ticks and repeated expiry events finalize latest saved answers once (3.5s)
+  ok  7 tests\browser\exam.spec.ts:114:1 › interval expiry continues in review and answers cannot change after the deadline (4.5s)
+  ok  6 tests\browser\audit-fixes.spec.ts:45:3 › leaving for history preserves the attempt and keyboard access at 320 (6.6s)
+  ok  9 tests\browser\audit-fixes.spec.ts:45:3 › leaving for history preserves the attempt and keyboard access at 390 (4.1s)
+  ok  8 tests\browser\exam.spec.ts:135:1 › refresh and reopening use the original deadline and auto-submit expired saved attempts (6.1s)
+  ok 10 tests\browser\audit-fixes.spec.ts:45:3 › leaving for history preserves the attempt and keyboard access at 768 (3.8s)
+  ok 11 tests\browser\exam.spec.ts:164:1 › failed saves keep recorded answers, flags and position until storage recovers (2.9s)
+  ok 12 tests\browser\audit-fixes.spec.ts:45:3 › leaving for history preserves the attempt and keyboard access at 1366 (3.0s)
+  ok 13 tests\browser\exam.spec.ts:202:3 › narrative, table, persistent bar and keyboard access at 320 (3.0s)
+  ok 14 tests\browser\audit-fixes.spec.ts:45:3 › leaving for history preserves the attempt and keyboard access at landscape (2.9s)
+  ok 15 tests\browser\exam.spec.ts:202:3 › narrative, table, persistent bar and keyboard access at 390 (2.8s)
+  ok 16 tests\browser\audit-fixes.spec.ts:45:3 › leaving for history preserves the attempt and keyboard access at enlarged (2.8s)
+  ok 17 tests\browser\exam.spec.ts:202:3 › narrative, table, persistent bar and keyboard access at 768 (3.0s)
+  ok 19 tests\browser\exam.spec.ts:202:3 › narrative, table, persistent bar and keyboard access at 1366 (2.7s)
+  ok 20 tests\browser\exam.spec.ts:202:3 › narrative, table, persistent bar and keyboard access at landscape (3.1s)
+  ok 18 tests\browser\audit-fixes.spec.ts:86:1 › refresh warns, cancellation stays in exam, and acceptance recovers the original deadline (7.2s)
+  ok 22 tests\browser\audit-fixes.spec.ts:117:1 › browser Back warns before leaving the timed exam (1.7s)
+  ok 21 tests\browser\exam.spec.ts:202:3 › narrative, table, persistent bar and keyboard access at enlarged (2.9s)
+  ok 23 tests\browser\audit-fixes.spec.ts:133:1 › expiry closes the leave dialog and finalizes once without warning (2.1s)
+  ok 25 tests\browser\audit-fixes.spec.ts:155:3 › countdown reconciles with saved report time at 92500 ms (3.1s)
+  ok 24 tests\browser\foundation.spec.ts:13:3 › complete practice flow at 320 (4.6s)
+  ok 26 tests\browser\audit-fixes.spec.ts:155:3 › countdown reconciles with saved report time at 103000 ms (3.0s)
+  ok 27 tests\browser\foundation.spec.ts:13:3 › complete practice flow at 390 (4.0s)
+  ok 28 tests\browser\results.spec.ts:23:1 › known synthetic results have independent totals, exclusive filters and exact review metadata (2.7s)
+  ok 30 tests\browser\results.spec.ts:82:1 › empty Flagged review explains the empty state (1.2s)
+  ok 29 tests\browser\foundation.spec.ts:13:3 › complete practice flow at 768 (3.9s)
+  ok 31 tests\browser\results.spec.ts:89:1 › new validated data powers a fresh full flow while the original report stays frozen (3.0s)
+  ok 32 tests\browser\foundation.spec.ts:13:3 › complete practice flow at 1366 (3.8s)
+  ok 33 tests\browser\results.spec.ts:146:3 › real Results, source review and table keyboard access at 320 (3.0s)
+  ok 34 tests\browser\foundation.spec.ts:13:3 › complete practice flow at landscape (3.5s)
+  ok 36 tests\browser\foundation.spec.ts:74:1 › enlarged text keeps exam and review controls reachable (1.3s)
+  ok 35 tests\browser\results.spec.ts:146:3 › real Results, source review and table keyboard access at 390 (3.1s)
+  ok 37 tests\browser\foundation.spec.ts:91:1 › an existing attempt keeps its snapshot when a newer bank appears (3.2s)
+  ok 38 tests\browser\results.spec.ts:146:3 › real Results, source review and table keyboard access at 768 (3.3s)
+  ok 39 tests\browser\foundation.spec.ts:132:1 › touch can start, answer, review, and submit (2.3s)
+  ok 40 tests\browser\results.spec.ts:146:3 › real Results, source review and table keyboard access at 1366 (2.8s)
+  ok 41 tests\browser\review.spec.ts:29:1 › review counts independent flags, traps focus, jumps including current, and restores unchanged answers (2.8s)
+  ok 42 tests\browser\results.spec.ts:146:3 › real Results, source review and table keyboard access at landscape (2.7s)
+  ok 43 tests\browser\review.spec.ts:77:1 › cancelled confirmation preserves selections; confirmed double clicks save blanks, partials, score and one report (3.0s)
+  ok 44 tests\browser\results.spec.ts:146:3 › real Results, source review and table keyboard access at enlarged (3.0s)
+  ok 45 tests\browser\review.spec.ts:121:3 › expiry during confirmation takes priority: interval (1.9s)
+  ok 46 tests\browser\start.spec.ts:11:1 › Start content is private, repeated clicks create one attempt, and replacement needs keyboard confirmation (2.9s)
+  ok 47 tests\browser\review.spec.ts:121:3 › expiry during confirmation takes priority: manual overlap (1.9s)
+  ok 48 tests\browser\start.spec.ts:64:1 › refresh recovery retains answers, flags, position, snapshot and deadline (2.1s)
+  ok 49 tests\browser\review.spec.ts:157:1 › submission save failure stays in confirmation, reports the error, and permits retry (1.8s)
+  ok 51 tests\browser\review.spec.ts:187:3 › review grid and confirmation fit at 320 (2.2s)
+  ok 50 tests\browser\start.spec.ts:84:1 › resuming an expired attempt submits once and opens its original report (2.3s)
+  ok 52 tests\browser\review.spec.ts:187:3 › review grid and confirmation fit at 390 (2.3s)
+  ok 53 tests\browser\start.spec.ts:116:1 › old reports retain original grading and content after bank changes (2.8s)
+  ok 54 tests\browser\review.spec.ts:187:3 › review grid and confirmation fit at 768 (2.5s)
+  ok 55 tests\browser\start.spec.ts:142:1 › loading and invalid data disable real attempts without item-level validation details (2.0s)
+  ok 57 tests\browser\start.spec.ts:173:1 › blocked storage has a recoverable message and no misleading empty history (931ms)
+  ok 58 tests\browser\start.spec.ts:185:1 › failed initial save keeps Start open and can be retried (1.2s)
+  ok 56 tests\browser\review.spec.ts:187:3 › review grid and confirmation fit at 1366 (2.4s)
+  ok 59 tests\browser\start.spec.ts:205:1 › Start and its confirmation remain accessible with enlarged text (1.5s)
+  ok 60 tests\browser\review.spec.ts:187:3 › review grid and confirmation fit at landscape (2.1s)
+  ok 61 tests\browser\ui-update.spec.ts:19:3 › course drawer is accessible and leaves storage unchanged at 320 (2.5s)
+  ok 62 tests\browser\review.spec.ts:187:3 › review grid and confirmation fit at enlarged (2.2s)
+  ok 63 tests\browser\ui-update.spec.ts:19:3 › course drawer is accessible and leaves storage unchanged at 390 (2.0s)
+  ok 64 tests\browser\ui-update.spec.ts:19:3 › course drawer is accessible and leaves storage unchanged at 768 (2.0s)
+  ok 65 tests\browser\ui-update.spec.ts:19:3 › course drawer is accessible and leaves storage unchanged at 1366 (2.2s)
+  ok 66 tests\browser\ui-update.spec.ts:19:3 › course drawer is accessible and leaves storage unchanged at landscape (1.8s)
+  ok 67 tests\browser\ui-update.spec.ts:19:3 › course drawer is accessible and leaves storage unchanged at enlarged (1.8s)
+  ok 68 tests\browser\ui-update.spec.ts:82:1 › source drawer handles pending and unavailable bank with retry (787ms)
+  ok 69 tests\browser\ui-update.spec.ts:99:1 › insufficient multiple selections remain unanswered after refresh and grade incorrect on deliberate submission (1.8s)
+  ok 70 tests\browser\ui-update.spec.ts:126:3 › legacy history and frozen report agree for 0 correct (1.2s)
+  ok 71 tests\browser\ui-update.spec.ts:126:3 › legacy history and frozen report agree for 43 correct (1.2s)
+  ok 72 tests\browser\ui-update.spec.ts:126:3 › legacy history and frozen report agree for 44 correct (3.6s)
+  ok 73 tests\browser\ui-update.spec.ts:126:3 › legacy history and frozen report agree for 60 correct (1.3s)
+  x  74 tests\browser\ui-update.spec.ts:175:1 › touch source drawer preserves an unfinished attempt and original deadline (30.0s)
+
+
+  1) tests\browser\ui-update.spec.ts:175:1 › touch source drawer preserves an unfinished attempt and original deadline
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.tap: Test ended.
+    Call log:
+      - waiting for getByRole('button', { name: 'Source courses' })
+
+
+      181 |   await page.getByRole('button', { name: 'Attempt history', exact: true }).tap();
+      182 |   const before = await storage(page);
+    > 183 |   await page.getByRole('button', { name: 'Source courses' }).tap();
+          |                                                              ^
+      184 |   const drawer = page.getByRole('dialog', { name: 'Courses used for this mock' });
+      185 |   await drawer.getByRole('link').last().scrollIntoViewIfNeeded();
+      186 |   await expect(drawer.getByRole('link').last()).toBeInViewport();
+        at C:\Users\HP\OneDrive\Desktop\PCAO-F\tests\browser\ui-update.spec.ts:183:62
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\qa-audit-artifacts\ui-update-touch-source-dra-164c6-tempt-and-original-deadline\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\qa-audit-artifacts\ui-update-touch-source-dra-164c6-tempt-and-original-deadline\error-context.md
+
+  1 failed
+    tests\browser\ui-update.spec.ts:175:1 › touch source drawer preserves an unfinished attempt and original deadline
+  73 passed (2.4m)
+
+Exit: 1 (73 passed; one existing touch test required the new leave confirmation)
+
+Focused Chromium audit regressions — corrected preview cwd
+
+Running 14 tests using 1 worker
+
+  ok  1 tests\browser\audit-fixes.spec.ts:11:3 › confirmation reminds about answered flagged questions: 0 (2.4s)
+  ok  2 tests\browser\audit-fixes.spec.ts:11:3 › confirmation reminds about answered flagged questions: 1 (1.4s)
+  ok  3 tests\browser\audit-fixes.spec.ts:11:3 › confirmation reminds about answered flagged questions: 2 (1.5s)
+  ok  4 tests\browser\audit-fixes.spec.ts:45:3 › leaving for history preserves the attempt and keyboard access at 320 (3.8s)
+  ok  5 tests\browser\audit-fixes.spec.ts:45:3 › leaving for history preserves the attempt and keyboard access at 390 (1.7s)
+  ok  6 tests\browser\audit-fixes.spec.ts:45:3 › leaving for history preserves the attempt and keyboard access at 768 (1.8s)
+  ok  7 tests\browser\audit-fixes.spec.ts:45:3 › leaving for history preserves the attempt and keyboard access at 1366 (1.7s)
+  ok  8 tests\browser\audit-fixes.spec.ts:45:3 › leaving for history preserves the attempt and keyboard access at landscape (1.6s)
+  ok  9 tests\browser\audit-fixes.spec.ts:45:3 › leaving for history preserves the attempt and keyboard access at enlarged (1.7s)
+  ok 10 tests\browser\audit-fixes.spec.ts:86:1 › refresh warns, cancellation stays in exam, and acceptance recovers the original deadline (3.9s)
+  ok 11 tests\browser\audit-fixes.spec.ts:117:1 › browser Back warns before leaving the timed exam (1.2s)
+  ok 12 tests\browser\audit-fixes.spec.ts:133:1 › expiry closes the leave dialog and finalizes once without warning (1.3s)
+  ok 13 tests\browser\audit-fixes.spec.ts:155:3 › countdown reconciles with saved report time at 92500 ms (1.8s)
+  ok 14 tests\browser\audit-fixes.spec.ts:155:3 › countdown reconciles with saved report time at 103000 ms (1.9s)
+
+  14 passed (13.2m)
+
+Exit: 0
+
+Corrected touch regression
+
+Running 1 test using 1 worker
+
+(node:10196) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 tests\browser\ui-update.spec.ts:175:1 › touch source drawer preserves an unfinished attempt and original deadline (1.7s)
+
+  1 passed (3.7s)
+
+Exit: 0
+
+Final evidence: TypeScript passed; 35 unit tests passed; production build passed; 74 Chromium cases passed across the 73-pass full run and corrected 1-case rerun. Question bank SHA-256 e1a9f7b3f157320ea738a0a06a48327439b2d89902da64137ca03dddc7d2efea.

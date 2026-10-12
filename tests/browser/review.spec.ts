@@ -85,6 +85,7 @@ test('cancelled confirmation preserves selections; confirmed double clicks save 
   await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
   const confirmation = page.getByRole('dialog', { name: 'Submit exam?', exact: true });
   await expect(confirmation).toContainText('60 unanswered');
+  await expect(confirmation).toContainText('1 flagged question');
   await expect(confirmation).toContainText('includes questions without the required number of selections');
   await expect(confirmation.getByRole('heading')).toBeFocused();
   await page.keyboard.press('Escape');
@@ -213,6 +214,9 @@ for (const viewport of [
     await page.getByRole('button', { name: 'Review & submit' }).click();
     await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
     await expect(dialog).toContainText('60 unanswered');
+    await expect(dialog).toContainText('1 flagged question');
+    await expect(page.locator('[role="timer"]:visible')).toHaveCount(1);
+    await expect(page.locator('.exam-bar .timer')).toBeHidden();
     await expect(dialog).toContainText('includes questions without the required number of selections');
     await expect(page.getByRole('button', { name: 'Confirm submission' })).toBeInViewport();
     await page.screenshot({ path: 'screenshots/submit-confirmation-' + viewport.name + '.png' });
