@@ -16,8 +16,8 @@ export function Button({ variant = 'secondary', className = '', type = 'button',
 }
 
 export function Dialog({
-  open, title, onClose, children, actions, variant = 'modal',
-}: PropsWithChildren<{ open: boolean; title: string; onClose: () => void; actions?: ReactNode; variant?: 'modal' | 'drawer' }>) {
+  open, title, onClose, children, actions, variant = 'modal', closeDisabled = false,
+}: PropsWithChildren<{ open: boolean; title: string; onClose: () => void; actions?: ReactNode; variant?: 'modal' | 'drawer'; closeDisabled?: boolean }>) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -65,7 +65,7 @@ export function Dialog({
     }}>
     <div className="dialog__header">
       <h2 id={titleId} ref={headingRef} tabIndex={-1}>{title}</h2>
-      <Button variant="quiet" onClick={onClose} aria-label="Close dialog">Close</Button>
+      <Button variant="quiet" disabled={closeDisabled} onClick={onClose} aria-label="Close dialog">Close</Button>
     </div>
     <div className="dialog__body" ref={bodyRef}>{children}</div>
     {actions && <div className="dialog__actions">{actions}</div>}

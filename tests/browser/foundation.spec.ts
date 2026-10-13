@@ -25,10 +25,12 @@ for (const viewport of viewports) {
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 
     await page.getByRole('button', { name: /^Start (exam|new attempt)$/ }).click();
+    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Question 1 of 60' })).toBeVisible();
     await expect(page.getByRole('timer')).toContainText(':');
     for (const id of bank.questions[0].correctOptionIds) await page.locator(`input[name="answer-Q1"][value="${id}"]`).check();
     await page.getByRole('button', { name: 'Flag for review' }).click();
+    await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByRole('heading', { name: 'Question 2 of 60' })).toBeVisible();
     await page.getByRole('button', { name: 'Review & submit' }).click();
@@ -54,6 +56,7 @@ for (const viewport of viewports) {
     await page.screenshot({ path: `screenshots/exam-review-${viewport.name}.png` });
     await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm submission' }).click();
+  await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
 
     await expect(page.getByRole('heading', { name: 'Your results' })).toBeVisible();
     await expect(page.locator('.result-number')).toHaveText('33 / 1000');
@@ -77,6 +80,8 @@ test('enlarged text keeps exam and review controls reachable', async ({ page }) 
   await page.evaluate(() => { document.body.style.fontSize = '24px'; });
   await page.getByRole('button', { name: /^Start (exam|new attempt)$/ }).focus();
   await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).focus();
+  await page.keyboard.press('Enter');
   await page.locator('input[name="answer-Q1"]').first().focus();
   await page.keyboard.press('Space');
   await expect(page.locator('input[name="answer-Q1"]').first()).toBeChecked();
@@ -93,9 +98,11 @@ test('an existing attempt keeps its snapshot when a newer bank appears', async (
   const published = await (await request.get('/question-bank.json')).json();
   await page.goto('/');
   await page.getByRole('button', { name: /^Start (exam|new attempt)$/ }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
   await page.locator(`input[name="answer-Q1"][value="${published.questions[0].correctOptionIds[0]}"]`).check();
   await page.getByRole('button', { name: 'Next' }).click();
   await page.getByRole('button', { name: 'Flag for review' }).click();
+  await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
   const beforeResize = await page.evaluate(() => { const ids = JSON.parse(localStorage.getItem('pcao-f:attempt-ids:v1') ?? '[]'); return JSON.parse(localStorage.getItem('pcao-f:attempt:v1:' + ids[0]) ?? '{}'); });
   await page.setViewportSize({ width: 768, height: 1024 });
   await expect(page.getByRole('heading', { name: 'Question 2 of 60' })).toBeVisible();
@@ -124,8 +131,10 @@ test('an existing attempt keeps its snapshot when a newer bank appears', async (
   await page.getByRole('button', { name: 'Review & submit' }).click();
   await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm submission' }).click();
+  await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
   await expect(page.locator('.result-number')).toHaveText('17 / 1000');
   await page.getByRole('button', { name: /^Start (exam|new attempt)$/ }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
   await expect(page.getByText('dataset 1.2.0-test', { exact: false })).toBeVisible();
 });
 
@@ -136,6 +145,7 @@ test('touch can start, answer, review, and submit', async ({ browser, request })
   try {
     await page.goto('/');
     await page.getByRole('button', { name: /^Start (exam|new attempt)$/ }).tap();
+    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).tap();
     await page.locator(`label.option-card:has(input[value="${published.questions[0].correctOptionIds[0]}"])`).tap();
     await page.getByRole('button', { name: 'Review & submit' }).tap();
     await page.getByRole('button', { name: 'Submit exam', exact: true }).tap();

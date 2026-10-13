@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { installPausedClock } from './navigation';
 import { syntheticResultsAttempt } from '../fixtures/syntheticResultsAttempt';
 
 async function openSyntheticReport(page: Page, flagged = true) {
@@ -93,19 +94,20 @@ test('new validated data powers a fresh full flow while the original report stay
   latest.questions[1].correctOptionIds = ['B'];
   latest.questions[1].stemMarkdown = 'Synthetic updated T2 content. **Never publish.**';
   latest.domains[0].title = 'Updated synthetic D1';
-  await page.clock.install({ time: new Date('2026-10-12T14:00:00Z') });
-  await page.clock.pauseAt(new Date('2026-10-12T14:00:00Z'));
+  await installPausedClock(page, new Date('2026-10-12T14:00:00Z'));
   await page.route('**/question-bank.json', route => route.fulfill({ json: latest }));
   await openSyntheticReport(page);
   await expect(page.locator('[data-domain-id="D1"]')).toContainText('Synthetic D1');
   await item(page, 'T2').locator('summary').click();
   await expect(item(page, 'T2')).not.toContainText('updated T2 content');
   await page.getByRole('button', { name: 'Start new attempt', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60' })).toBeFocused();
   await expect(page.getByText('Timed attempt · dataset fixture-2')).toBeVisible();
   await page.locator('input[value="C"]').check();
   await page.locator('input[value="A"]').check();
   await page.getByRole('button', { name: 'Flag for review' }).click();
+  await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await page.locator('input[value="B"]').check();
   await page.reload();
@@ -149,15 +151,18 @@ for (const viewport of [
     await page.goto('/');
     if (viewport.name === 'enlarged') await page.evaluate(() => { document.body.style.fontSize = '24px'; });
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
     await page.locator('input[value="' + bank.questions[0].correctOptionIds[0] + '"]').check();
     await page.getByRole('button', { name: 'Review & submit' }).click();
     await page.getByRole('button', { name: /^Question 8:/ }).click();
     // One reviewed correct choice remains an incomplete multiple response.
     await page.locator('input[value="' + bank.questions[7].correctOptionIds[0] + '"]').check();
     await page.getByRole('button', { name: 'Flag for review' }).click();
+    await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Review & submit' }).click();
     await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
     await page.getByRole('button', { name: 'Confirm submission' }).click();
+    await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
     await expect(page.locator('.result-counts dd')).toHaveText(['1', '1', '58']);
     await expect(page.locator('.review-item[open]')).toHaveCount(0);
     await page.screenshot({ path: 'screenshots/results-overview-' + viewport.name + '.png' });

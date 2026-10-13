@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { installPausedClock } from './navigation';
 
 async function savedAttempt(page: Page) {
   return page.evaluate(() => {
@@ -11,6 +12,8 @@ for (const flags of [0, 1, 2]) {
   test('confirmation reminds about answered flagged questions: ' + flags, async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
     // Fill every item to isolate flags from unanswered warnings.
     await page.evaluate(count => {
       const id = JSON.parse(localStorage.getItem('pcao-f:attempt-ids:v1')!)[0];
@@ -47,8 +50,10 @@ for (const viewport of [
     await page.goto('/');
     if (viewport.name === 'enlarged') await page.evaluate(() => { document.body.style.fontSize = '24px'; });
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
     await page.getByRole('radio').first().check();
     await page.getByRole('button', { name: 'Flag for review' }).click();
+    await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
     const before = await savedAttempt(page);
     const opener = page.getByRole('button', { name: 'Attempt history', exact: true });
     await opener.click();
@@ -86,6 +91,7 @@ for (const viewport of [
 test('refresh warns, cancellation stays in exam, and acceptance recovers the original deadline', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
   await page.getByRole('radio').first().check();
   const before = await savedAttempt(page);
   const cancelledPrompt = page.waitForEvent('dialog');
@@ -108,6 +114,7 @@ test('refresh warns, cancellation stays in exam, and acceptance recovers the ori
   await page.getByRole('button', { name: 'Review & submit' }).click();
   await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm submission' }).click();
+  await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
   let prompts = 0;
   page.on('dialog', async dialog => { prompts++; await dialog.accept(); });
   await page.reload();
@@ -118,6 +125,8 @@ test('browser Back warns before leaving the timed exam', async ({ page }) => {
   await page.goto('/?qa=previous');
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   const before = await savedAttempt(page);
   const prompt = page.waitForEvent('dialog');
   const back = page.goBack();
@@ -132,10 +141,10 @@ test('browser Back warns before leaving the timed exam', async ({ page }) => {
 
 test('expiry closes the leave dialog and finalizes once without warning', async ({ page }) => {
   const instant = new Date('2026-10-12T10:00:00Z');
-  await page.clock.install({ time: instant });
-  await page.clock.pauseAt(instant);
+  await installPausedClock(page, instant);
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
   await page.getByRole('radio').first().check();
   const before = await savedAttempt(page);
   await page.getByRole('button', { name: 'Attempt history', exact: true }).click();
@@ -154,10 +163,10 @@ test('expiry closes the leave dialog and finalizes once without warning', async 
 for (const elapsed of [92500, 103000]) {
   test('countdown reconciles with saved report time at ' + elapsed + ' ms', async ({ page }) => {
     const instant = new Date('2026-10-12T10:00:00Z');
-    await page.clock.install({ time: instant });
-    await page.clock.pauseAt(instant);
+    await installPausedClock(page, instant);
     await page.goto('/');
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
     await page.getByRole('button', { name: 'Review & submit' }).click();
     await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
     await page.clock.runFor(elapsed);
@@ -165,6 +174,7 @@ for (const elapsed of [92500, 103000]) {
     const used = elapsed === 92500 ? '00:01:32' : '00:01:43';
     await expect(page.getByRole('dialog').getByRole('timer')).toContainText(remaining);
     await page.getByRole('button', { name: 'Confirm submission' }).click();
+    await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
     await expect(page.locator('.result-metadata')).toContainText('Time used' + used);
     const submitted = await savedAttempt(page);
     expect(submitted.submittedAt - submitted.startedAt).toBe(elapsed);

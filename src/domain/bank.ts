@@ -102,9 +102,9 @@ export type BankLoadState =
   | { status: 'ready'; bank: QuestionBank }
   | { status: 'error'; errors: string[] };
 
-export async function loadQuestionBank(fetcher: typeof fetch = fetch): Promise<BankLoadState> {
+export async function loadQuestionBank(fetcher: typeof fetch = fetch, path = 'question-bank.json'): Promise<BankLoadState> {
   try {
-    const response = await fetcher(`${import.meta.env.BASE_URL}question-bank.json`, { cache: 'no-store' });
+    const response = await fetcher(`${import.meta.env.BASE_URL}${path}`, { cache: 'no-store' });
     if (!response.ok) return { status: 'error', errors: [`Question bank request failed (HTTP ${response.status}).`] };
     const result = validateQuestionBank(await response.json());
     return result.ok ? { status: 'ready', bank: result.bank } : { status: 'error', errors: result.errors };

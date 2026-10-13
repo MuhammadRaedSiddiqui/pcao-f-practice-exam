@@ -1,0 +1,4 @@
+# Preserve reviewed checksums across Windows and Unix checkouts.
+/public/question-bank.json text eol=lf
+/public/easy-question-bank.json text eol=lf
+/tests/fixtures/approved-question-content.md text eol=lf

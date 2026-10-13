@@ -27,7 +27,7 @@ for (const viewport of viewports) {
     await page.screenshot({ path: 'screenshots/updated-home-' + viewport.name + '.png', fullPage: true });
     await opener.click();
     const drawer = page.getByRole('dialog', { name: 'Courses used for this mock' });
-    const heading = drawer.getByRole('heading');
+    const heading = drawer.getByRole('heading', { name: 'Courses used for this mock', exact: true });
     const close = drawer.getByRole('button', { name: 'Close dialog' });
     await expect(heading).toBeFocused();
     await expect(close).toBeInViewport();
@@ -99,6 +99,7 @@ test('source drawer handles pending and unavailable bank with retry', async ({ p
 test('insufficient multiple selections remain unanswered after refresh and grade incorrect on deliberate submission', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
   await page.getByRole('button', { name: 'Review & submit' }).click();
   await page.getByRole('button', { name: /^Question 4:/ }).click();
   await page.getByRole('checkbox').first().check();
@@ -115,6 +116,7 @@ test('insufficient multiple selections remain unanswered after refresh and grade
   await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
   await expect(page.getByRole('dialog')).toContainText('60 unanswered');
   await page.getByRole('button', { name: 'Confirm submission' }).click();
+  await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
   await expect(page.locator('.result-counts dd')).toHaveText(['0', '1', '59']);
   await page.locator('.review-item').nth(3).locator('summary').click();
   await expect(page.locator('.review-item').nth(3).locator('.review-outcome')).toHaveText('Incorrect');
@@ -177,6 +179,7 @@ test('touch source drawer preserves an unfinished attempt and original deadline'
   const page = await context.newPage();
   await page.goto(test.info().project.use.baseURL!);
   await page.getByRole('button', { name: 'Start exam', exact: true }).tap();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).tap();
   await page.getByRole('radio').first().check();
   await page.getByRole('button', { name: 'Attempt history', exact: true }).tap();
   await page.getByRole('button', { name: 'Go to attempt history' }).tap();

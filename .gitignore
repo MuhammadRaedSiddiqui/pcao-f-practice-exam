@@ -8,3 +8,6 @@ playwright-report/
 .localtest/
 %SystemDrive%/
 debug.log
+
+# Vercel local project link
+.vercel/

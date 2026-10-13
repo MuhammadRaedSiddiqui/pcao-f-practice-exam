@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { reloadPage } from './navigation';
+import { installPausedClock, reloadPage } from './navigation';
 
 async function storedAttempt(page: Page) {
   return page.evaluate(() => {
@@ -18,6 +18,7 @@ test('complete means required cardinality, partial answers persist, and checkbox
   const bank = await (await request.get('/question-bank.json')).json();
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Previous', exact: true })).toBeDisabled();
   const incorrect = bank.questions[0].options.find((option: { id: string }) => !bank.questions[0].correctOptionIds.includes(option.id));
   await page.locator('input[value="' + incorrect.id + '"]').check();
@@ -32,11 +33,13 @@ test('complete means required cardinality, partial answers persist, and checkbox
   await expect(page.getByRole('status')).toContainText('1 of 2 selected');
   await expect(page.locator('.answered-count')).toHaveText('0 / 60answered');
   await page.getByRole('button', { name: 'Flag for review' }).click();
+  await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
   const partial = await storedAttempt(page);
   expect(partial.answers.Q4).toEqual([bank.questions[3].options[0].id]);
   expect(partial.flags).toEqual(['Q4']);
   expect(partial.currentQuestionId).toBe('Q4');
   await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Question 5 of 60', exact: true })).toBeFocused();
   expect((await storedAttempt(page)).currentQuestionId).toBe('Q5');
   await reloadPage(page);
   await page.getByRole('button', { name: 'Resume attempt' }).click();
@@ -51,7 +54,7 @@ test('complete means required cardinality, partial answers persist, and checkbox
   await choices.nth(0).uncheck();
   await expect(choices.nth(2)).toBeEnabled();
   await choices.nth(2).check();
-  expect((await storedAttempt(page)).answers.Q4).toEqual([bank.questions[3].options[1].id, bank.questions[3].options[2].id]);
+  await expect.poll(async () => (await storedAttempt(page)).answers.Q4).toEqual([bank.questions[3].options[1].id, bank.questions[3].options[2].id]);
   await jump(page, 37);
   await expect(page.getByText('Select exactly THREE', { exact: true })).toBeVisible();
   for (let i = 0; i < 3; i++) await page.getByRole('checkbox').nth(i).check();
@@ -66,14 +69,15 @@ test('complete means required cardinality, partial answers persist, and checkbox
 
 test('deadline catches up after suspended ticks and repeated expiry events finalize latest saved answers once', async ({ page }) => {
   const instant = new Date('2026-10-12T10:00:00Z');
-  await page.clock.install({ time: instant });
-  await page.clock.pauseAt(instant);
+  await installPausedClock(page, instant);
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
   await page.getByRole('radio').nth(0).check();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await page.getByRole('radio').nth(1).check();
   await page.getByRole('button', { name: 'Flag for review' }).click();
+  await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
   const latest = await storedAttempt(page);
   await page.clock.setSystemTime(instant.getTime() + 30 * 60_000);
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
@@ -113,10 +117,10 @@ test('deadline catches up after suspended ticks and repeated expiry events final
 
 test('interval expiry continues in review and answers cannot change after the deadline', async ({ page }) => {
   const instant = new Date('2026-10-12T10:00:00Z');
-  await page.clock.install({ time: instant });
-  await page.clock.pauseAt(instant);
+  await installPausedClock(page, instant);
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
   await page.getByRole('radio').first().check();
   await page.getByRole('button', { name: 'Review & submit' }).click();
   await page.clock.fastForward(120 * 60_000);
@@ -124,6 +128,8 @@ test('interval expiry continues in review and answers cannot change after the de
   expect((await storedAttempt(page)).submissionReason).toBe('time expired');
   await reloadPage(page);
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   const before = await storedAttempt(page);
   await page.clock.setSystemTime(before.deadlineAt);
   // The expiry guard removes this input; do not wait for it to become checked.
@@ -135,6 +141,7 @@ test('interval expiry continues in review and answers cannot change after the de
 test('refresh and reopening use the original deadline and auto-submit expired saved attempts', async ({ page, context }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
   await page.getByRole('radio').first().check();
   const saved = await storedAttempt(page);
   await reloadPage(page);
@@ -164,6 +171,8 @@ test('refresh and reopening use the original deadline and auto-submit expired sa
 test('failed saves keep recorded answers, flags and position until storage recovers', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   const before = await storedAttempt(page);
   await page.evaluate(() => {
     const original = Storage.prototype.setItem;
@@ -184,6 +193,7 @@ test('failed saves keep recorded answers, flags and position until storage recov
   await page.evaluate(() => { document.body.dataset.failWrites = 'false'; });
   await page.getByRole('radio').first().check();
   await page.getByRole('button', { name: 'Flag for review' }).click();
+  await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 2 of 60' })).toBeFocused();
   await expect(page.getByRole('alert')).toHaveCount(0);
@@ -206,6 +216,7 @@ for (const viewport of [
     await page.goto('/');
     if (viewport.name === 'enlarged') await page.evaluate(() => { document.body.style.fontSize = '24px'; });
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
     await jump(page, 3);
     await expect(page.locator('.question-stem .markdown > p')).toHaveCount(3);
     await expect(page.locator('.question-stem table tbody tr')).toHaveCount(6);

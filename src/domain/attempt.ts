@@ -1,10 +1,12 @@
 import { z } from 'zod';
 import { validateQuestionBank, type Question, type QuestionBank } from './bank';
+import type { Difficulty } from './difficulty';
 
 export type SelectionStatus = 'unanswered' | 'answered';
 export type SubmissionReason = 'manual' | 'time expired';
 export type Attempt = {
   id: string;
+  revision?: number;
   startedAt: number;
   deadlineAt: number;
   status: 'in-progress' | 'submitted';
@@ -12,18 +14,21 @@ export type Attempt = {
   answers: Record<string, string[]>;
   flags: string[];
   datasetVersion: string;
+  difficulty?: Difficulty;
   snapshot: QuestionBank;
   submittedAt?: number;
   submissionReason?: SubmissionReason;
   result?: Score;
 };
 export type Score = { correct: number; total: number; percentage: number; byDomain: Record<string, { correct: number; total: number }> };
+const timestamp = z.number().finite().refine(value => Number.isFinite(new Date(value).getTime()), 'Invalid date');
 const attemptFields = z.object({
-  id: z.string().min(1), startedAt: z.number().finite(), deadlineAt: z.number().finite(),
+  id: z.string().min(1), revision: z.number().int().nonnegative().safe().optional(),
+  startedAt: timestamp, deadlineAt: timestamp,
   status: z.enum(['in-progress', 'submitted']), currentQuestionId: z.string().min(1),
   answers: z.record(z.string(), z.array(z.string())),
-  flags: z.array(z.string()), datasetVersion: z.string().min(1),
-  snapshot: z.unknown(), submittedAt: z.number().finite().optional(),
+  flags: z.array(z.string()), datasetVersion: z.string().min(1), difficulty: z.enum(['intermediate', 'advanced']).optional(),
+  snapshot: z.unknown(), submittedAt: timestamp.optional(),
   submissionReason: z.enum(['manual', 'time expired']).optional(),
   result: z.object({
     correct: z.number().int().nonnegative(), total: z.number().int().nonnegative(), percentage: z.number().finite(),
@@ -74,13 +79,17 @@ function frozenCopy<T>(value: T): T {
   return copy;
 }
 
-export function createAttempt(bank: QuestionBank, now = Date.now(), id: string = crypto.randomUUID()): Attempt {
+export function createAttempt(bank: QuestionBank, now = Date.now(), id: string = crypto.randomUUID(), difficulty?: Difficulty): Attempt {
   const validation = validateQuestionBank(bank);
   if (!validation.ok) throw new Error(validation.errors.join(' '));
+  timestamp.parse(now);
+  timestamp.parse(now + bank.durationMinutes * 60_000);
+  if (difficulty !== undefined) z.enum(['intermediate', 'advanced']).parse(difficulty);
   return {
-    id, startedAt: now, deadlineAt: now + bank.durationMinutes * 60_000,
+    id, revision: 0, startedAt: now, deadlineAt: now + bank.durationMinutes * 60_000,
     status: 'in-progress', currentQuestionId: bank.questions[0].id,
     answers: {}, flags: [], datasetVersion: bank.version, snapshot: frozenCopy(bank),
+    ...(difficulty ? { difficulty } : {}),
   };
 }
 
@@ -96,13 +105,13 @@ export function answerQuestion(attempt: Attempt, questionId: string, selected: s
   const allowed = new Set(question.options.map(option => option.id));
   if (selected.length > question.selectionCount || new Set(selected).size !== selected.length ||
       selected.some(id => !allowed.has(id))) throw new Error('The selected answers are invalid for this question.');
-  return { ...attempt, answers: { ...attempt.answers, [questionId]: [...selected] } };
+  return { ...attempt, revision: (attempt.revision ?? 0) + 1, answers: { ...attempt.answers, [questionId]: [...selected] } };
 }
 
 export function setCurrentQuestion(attempt: Attempt, questionId: string, now = Date.now()): Attempt {
   editable(attempt, now);
   if (!attempt.snapshot.questions.some(question => question.id === questionId)) throw new Error('Question not found in this attempt.');
-  return { ...attempt, currentQuestionId: questionId };
+  return { ...attempt, revision: (attempt.revision ?? 0) + 1, currentQuestionId: questionId };
 }
 
 export function setFlag(attempt: Attempt, questionId: string, flagged: boolean, now = Date.now()): Attempt {
@@ -110,14 +119,16 @@ export function setFlag(attempt: Attempt, questionId: string, flagged: boolean, 
   if (!attempt.snapshot.questions.some(question => question.id === questionId)) throw new Error('Question not found in this attempt.');
   const flags = new Set(attempt.flags);
   if (flagged) flags.add(questionId); else flags.delete(questionId);
-  return { ...attempt, flags: [...flags] };
+  return { ...attempt, revision: (attempt.revision ?? 0) + 1, flags: [...flags] };
 }
 
 export function submitAttempt(attempt: Attempt, now = Date.now(), requestedReason: SubmissionReason = 'manual'): Attempt {
   if (attempt.status === 'submitted') return attempt;
+  timestamp.parse(now);
   const timedOut = remainingMilliseconds(attempt.deadlineAt, now) === 0;
+  if (requestedReason === 'time expired' && !timedOut) throw new Error('The attempt deadline has not elapsed.');
   return {
-    ...attempt, status: 'submitted', submittedAt: now,
+    ...attempt, revision: (attempt.revision ?? 0) + 1, status: 'submitted', submittedAt: Math.max(now, attempt.startedAt),
     submissionReason: timedOut ? 'time expired' : requestedReason,
     result: gradeAttempt(attempt),
   };
@@ -135,8 +146,12 @@ function validRecoveredAttempt(input: unknown): Attempt | null {
   const bank = validateQuestionBank(value.snapshot);
   if (!bank.ok || value.datasetVersion !== bank.bank.version ||
       value.deadlineAt !== value.startedAt + bank.bank.durationMinutes * 60_000 ||
-      !bank.bank.questions.some(q => q.id === value.currentQuestionId) ||
-      (value.status === 'submitted') !== (value.submittedAt !== undefined && value.submissionReason !== undefined)) return null;
+      !bank.bank.questions.some(q => q.id === value.currentQuestionId)) return null;
+  if (value.status === 'in-progress') {
+    if (value.submittedAt !== undefined || value.submissionReason !== undefined || value.result !== undefined) return null;
+  } else if (value.submittedAt === undefined || value.submissionReason === undefined ||
+      value.submittedAt < value.startedAt ||
+      (value.submissionReason === 'time expired') !== (value.submittedAt >= value.deadlineAt)) return null;
   const questions = new Map(bank.bank.questions.map(q => [q.id, q]));
   for (const [id, selected] of Object.entries(value.answers)) {
     const question = questions.get(id);
@@ -146,7 +161,6 @@ function validRecoveredAttempt(input: unknown): Attempt | null {
   }
   if (new Set(value.flags).size !== value.flags.length || value.flags.some(id => !questions.has(id))) return null;
   const attempt: Attempt = { ...value, snapshot: frozenCopy(bank.bank) };
-  if (attempt.status === 'in-progress' && attempt.result) return null;
   if (attempt.result) {
     const expected = gradeAttempt(attempt);
     if (attempt.result.correct !== expected.correct || attempt.result.total !== expected.total ||
@@ -171,15 +185,46 @@ export function recoverAttempt(storage: AttemptStorage, id: string): Recovery {
   }
 }
 
-export function saveAttempt(storage: AttemptStorage, attempt: Attempt): Recovery {
+// The browser caller holds the shared storage lock throughout these synchronous writes.
+export function saveAttempt(storage: AttemptStorage, attempt: Attempt, expectedRevision?: number): Recovery {
+  const originals = new Map<string, string | null>();
   try {
-    const ids = JSON.parse(storage.getItem(indexKey) ?? '[]') as unknown;
+    const index = storage.getItem(indexKey);
+    const ids = JSON.parse(index ?? '[]') as unknown;
     if (!Array.isArray(ids) || ids.some(id => typeof id !== 'string')) throw new Error('Invalid history index');
-    storage.setItem(prefix + attempt.id, JSON.stringify(attempt));
-    storage.setItem(indexKey, JSON.stringify([...new Set([attempt.id, ...ids])]));
+    const key = prefix + attempt.id;
+    const previous = storage.getItem(key);
+    if (previous !== null) {
+      const recovered = recoverAttempt(storage, attempt.id);
+      if (!recovered.ok || !recovered.attempt) return recovered;
+      const latest = recovered.attempt;
+      if (JSON.stringify(latest) === JSON.stringify(attempt)) return { ok: true, attempt: latest };
+      if (latest.status === 'submitted') return { ok: false, error: 'This attempt was already submitted in another tab. Its report was kept.' };
+      if (attempt.difficulty !== latest.difficulty) return { ok: false, error: 'An existing attempt cannot change difficulty. Start another exam to choose a different level.' };
+      if ((expectedRevision !== undefined && expectedRevision !== (latest.revision ?? 0)) ||
+          (attempt.revision ?? 0) !== (latest.revision ?? 0) + 1) {
+        return { ok: false, error: 'This attempt changed in another tab. The latest saved answers were loaded. Try your change again.' };
+      }
+    } else if (expectedRevision !== undefined) {
+      return { ok: false, error: 'This attempt is no longer saved. It may have been replaced in another tab.' };
+    }
+    storage.setItem(key, JSON.stringify(attempt));
+    originals.set(key, previous);
+    // Existing edits only need one write; keep the history index stable.
+    if (!ids.includes(attempt.id)) {
+      storage.setItem(indexKey, JSON.stringify([...new Set([attempt.id, ...ids])]));
+      originals.set(indexKey, index);
+    }
     return { ok: true, attempt };
   } catch {
-    return { ok: false, error: 'Attempt could not be saved in this browser. Check available storage.' };
+    let restored = true;
+    for (const [key, value] of originals) {
+      try { if (value === null) storage.removeItem(key); else storage.setItem(key, value); }
+      catch { restored = false; }
+    }
+    return { ok: false, error: restored
+      ? 'Attempt could not be saved in this browser. Check available storage.'
+      : 'Browser storage failed during saving and recovery. Reload to check your saved answers before editing again.' };
   }
 }
 
@@ -204,26 +249,33 @@ export function submitStoredAttempt(storage: AttemptStorage, id: string, now = D
   const recovered = recoverAttempt(storage, id);
   if (!recovered.ok || !recovered.attempt) return recovered;
   if (recovered.attempt.status === 'submitted') return recovered;
-  return saveAttempt(storage, submitAttempt(recovered.attempt, now, reason));
+  return saveAttempt(storage, submitAttempt(recovered.attempt, now, reason), recovered.attempt.revision ?? 0);
 }
 
 export type StartRecovery = Recovery | { ok: false; error: string; unfinishedAttempts: Attempt[] };
 
 // Replace only confirmed unfinished attempts; restore prior records if a write fails.
 export function startStoredAttempt(
-  storage: AttemptStorage, bank: QuestionBank, confirmedIds: readonly string[] = [], now = Date.now(),
+  storage: AttemptStorage, bank: QuestionBank, confirmedIds: readonly string[] = [], now = Date.now(), difficulty?: Difficulty,
 ): StartRecovery {
   const validation = validateQuestionBank(bank);
   if (!validation.ok) return { ok: false, error: 'The reviewed question bank is unavailable. A new exam cannot start.' };
   const loaded = listAttempts(storage);
   if (loaded.errors.length) return { ok: false, error: 'Your saved attempts could not be read safely. A new exam cannot start. Try again after checking browser storage.' };
-  const unfinished = loaded.attempts.filter(item => item.status === 'in-progress');
+  // An expired attempt earns a report before a new start can replace anything.
+  for (const item of loaded.attempts) {
+    if (item.status === 'in-progress' && remainingMilliseconds(item.deadlineAt, now) === 0) {
+      const submitted = submitStoredAttempt(storage, item.id, now, 'time expired');
+      if (!submitted.ok) return submitted;
+    }
+  }
+  const unfinished = loaded.attempts.filter(item => item.status === 'in-progress' && remainingMilliseconds(item.deadlineAt, now) > 0);
   if (unfinished.some(item => !confirmedIds.includes(item.id))) {
     return { ok: false, error: 'Confirm before abandoning your unfinished attempt.', unfinishedAttempts: unfinished };
   }
   const originals = new Map<string, string | null>();
   try {
-    const next = createAttempt(validation.bank, now);
+    const next = createAttempt(validation.bank, now, undefined, difficulty);
     const ids = JSON.parse(storage.getItem(indexKey) ?? '[]') as string[];
     const unfinishedIds = new Set(unfinished.map(item => item.id));
     const keys = [indexKey, prefix + next.id, ...unfinished.map(item => prefix + item.id)];

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { installPausedClock } from './navigation';
 
 async function stored(page: Page) {
   return page.evaluate(() => {
@@ -29,14 +30,18 @@ async function countWrites(page: Page) {
 test('review counts independent flags, traps focus, jumps including current, and restores unchanged answers', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
   await page.getByRole('radio').first().check();
   await page.getByRole('button', { name: 'Flag for review' }).click();
+  await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
   await jump(page, 4);
   await page.getByRole('checkbox').first().check();
   await page.getByRole('button', { name: 'Flag for review' }).click();
+  await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 5 of 60' })).toBeFocused();
   await page.getByRole('button', { name: 'Flag for review' }).click();
+  await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
   const before = await stored(page);
   const opener = page.getByRole('button', { name: 'Review & submit' });
   await opener.click();
@@ -77,9 +82,11 @@ test('review counts independent flags, traps focus, jumps including current, and
 test('cancelled confirmation preserves selections; confirmed double clicks save blanks, partials, score and one report', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
   await jump(page, 4);
   await page.getByRole('checkbox').first().check();
   await page.getByRole('button', { name: 'Flag for review' }).click();
+  await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
   const before = await stored(page);
   await page.getByRole('button', { name: 'Review & submit' }).click();
   await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
@@ -120,10 +127,10 @@ test('cancelled confirmation preserves selections; confirmed double clicks save 
 for (const trigger of ['interval', 'manual overlap']) {
   test('expiry during confirmation takes priority: ' + trigger, async ({ page }) => {
     const instant = new Date('2026-10-12T10:00:00Z');
-    await page.clock.install({ time: instant });
-    await page.clock.pauseAt(instant);
+    await installPausedClock(page, instant);
     await page.goto('/');
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
     await page.getByRole('radio').first().check();
     const before = await stored(page);
     await page.getByRole('button', { name: 'Review & submit' }).click();
@@ -157,6 +164,8 @@ for (const trigger of ['interval', 'manual overlap']) {
 test('submission save failure stays in confirmation, reports the error, and permits retry', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   const before = await stored(page);
   await page.getByRole('button', { name: 'Review & submit' }).click();
   await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
@@ -173,6 +182,7 @@ test('submission save failure stays in confirmation, reports the error, and perm
   expect(await stored(page)).toEqual(before);
   await page.evaluate(() => { document.body.dataset.failWrites = 'false'; });
   await page.getByRole('button', { name: 'Confirm submission' }).click();
+  await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your results' })).toBeFocused();
 });
 
@@ -189,9 +199,11 @@ for (const viewport of [
     await page.goto('/');
     if (viewport.name === 'enlarged') await page.evaluate(() => { document.body.style.fontSize = '24px'; });
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
     await jump(page, 4);
     await page.getByRole('checkbox').first().check();
     await page.getByRole('button', { name: 'Flag for review' }).click();
+    await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Review & submit' }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog.locator('.question-number')).toHaveCount(60);

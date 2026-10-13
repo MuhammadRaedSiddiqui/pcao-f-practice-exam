@@ -1,9 +1,9 @@
 # PCAO-F Practice — Unified Implementation and Project Status
 
-**Status date:** 2026-10-12  
+**Status date:** 2026-10-13\
 **Project:** Independent PCAO-F Practice  
 **Workspace:** `C:\Users\HP\OneDrive\Desktop\PCAO-F`  
-**Delivery state:** Complete local implementation; publishing remains a later step.
+**Delivery state:** User-approved difficulty UI and both reviewed banks integrated and verified locally. Publishing remains a separate step.
 
 This document combines all implemented features, current project status, data rules, testing results, and verification evidence. Current statements below supersede older phase-specific status statements. Original reports remain available for traceability.
 
@@ -31,7 +31,7 @@ This document combines all implemented features, current project status, data ru
 The complete approved flow is implemented:
 
 ```text
-Start → Timed Exam → Review and submit → Confirmation → Results
+Start → Choose difficulty → Timed Exam → Review and submit → Confirmation → Results
   ↑          ↑             │
   │          └── Question jump / Back to exam
   └── Attempt history / Open report / Start new attempt
@@ -42,7 +42,7 @@ Reopening an expired saved attempt → Shared finalization → Results
 
 | Area | Status |
 | --- | --- |
-| Runtime bank | Reviewed and validated; version 1.1.0 |
+| Runtime banks | Advanced 1.1.0 and Intermediate 1.0.0, independently reviewed and validated |
 | Exam size and duration | 60 questions; 120 minutes |
 | Start and browser-local history | Implemented |
 | Timed Exam | Implemented |
@@ -52,13 +52,18 @@ Reopening an expired saved attempt → Shared finalization → Results
 | Exact-set grading and idempotent submission | Implemented |
 | Responsive, keyboard, and touch behavior | Verified in Chromium at the recorded sizes |
 | TypeScript | Passed |
-| Unit tests | 35 passed across 7 files |
-| Browser tests | 74 Chromium cases passed (73 in full run + corrected touch rerun) |
+| Unit tests | 55 passed across 8 files |
+| Browser tests | 101 Chromium cases passed in one final full run across 9 files |
 | Production build | Passed; generated output in `dist/` |
-| Current real-data integration prerequisites | None outstanding for the local app |
+| Difficulty selection | Both levels available; Advanced defaults, Intermediate loads the supplied Easy bank |
+| Intermediate integration | Complete; real starts, snapshots, grading, reports and courses verified |
 | Publishing | Not performed |
 
-The latest QA-fix verification completed on **2026-10-12**: TypeScript, 35 unit tests, and build passed; the 74-case Chromium run passed 73 tests, and the one existing touch test passed on rerun after adding the new leave-confirmation interaction. The QA-fix checks used an isolated fresh production preview at `http://127.0.0.1:4180` (stopped after verification). The earlier UI-update preview used `http://127.0.0.1:4178`; the earlier Results preview used port 4177. This is a local preview, not a published deployment. Restart it with the commands in section 14 when needed.
+Latest Intermediate integration verification on **2026-10-13** passed TypeScript, 55 unit tests, build and all 101 Chromium cases in one final run. Evidence is [INTERMEDIATE_INTEGRATION_VERIFICATION.md](INTERMEDIATE_INTEGRATION_VERIFICATION.md) and `test-results/intermediate-{typecheck,unit-tests,build,browser-checks}.txt`. Both banks are enabled; runtime/built hashes are unchanged. The updated production preview on port 4210 remains running. No deployment occurred.
+
+The earlier difficulty-selection verification on **2026-10-13** passed TypeScript, 53 unit tests, production build and all 95 Chromium cases in one final full run. The production preview on `http://127.0.0.1:4210` is left running for UI review. Evidence and screenshots are recorded in [DIFFICULTY_MAPPING_CORRECTION.md](DIFFICULTY_MAPPING_CORRECTION.md); raw logs are `test-results/difficulty-{typecheck,unit-tests,build,browser-checks}.txt`. The second reviewed bank is pending after UI approval; no question content or deployment was added.
+
+The earlier reliability-fix verification completed on **2026-10-13**: TypeScript, 46 unit tests, and production build passed; all 83 Chromium cases passed in one full run against a fresh production preview on `http://127.0.0.1:4192`. The preview was stopped afterward. Evidence is `test-results/reliability-fix-checks.txt`. The earlier QA-fix verification on 2026-10-12 passed 35 unit tests and 74 browser cases across its full run and corrected touch rerun, using port 4180. Earlier UI-update and Results previews used 4178 and 4177. These are local checks; no public deployment is established.
 
 This record includes the current local UI update: consolidated unanswered status, a course-source drawer, and equal-weight practice scoring out of 1000 with practice Passed/Failed. Verification evidence for this update is recorded below.
 
@@ -75,6 +80,7 @@ Question content comes from the runtime bank rather than component code. Results
 | [src/App.tsx](src/App.tsx) | Coordinates Start, Exam, Review, Results, loading, persistence, timer events, and finalization |
 | [src/domain/bank.ts](src/domain/bank.ts) | Strict dataset schema, validation, and runtime fetch |
 | [src/domain/attempt.ts](src/domain/attempt.ts) | Attempt creation, answers, flags, navigation, storage, recovery, grading, replacement, and submission |
+| [src/domain/browserStorage.ts](src/domain/browserStorage.ts) | Shared Web Lock for browser storage mutations across tabs |
 | [src/domain/results.ts](src/domain/results.ts) | Completed-result classifications, filters, domain summaries, priorities, and elapsed time |
 | [src/ui/primitives.tsx](src/ui/primitives.tsx) | Shared buttons, cards, containers, and modal dialogs |
 | [src/ui/MarkdownContent.tsx](src/ui/MarkdownContent.tsx) | Safe Markdown and labelled scrolling tables |
@@ -106,7 +112,7 @@ Use `npm ci` to reproduce the lockfile. The manifest uses `latest` ranges; the t
 
 ## 3. Reviewed dataset and validation
 
-### Runtime inventory
+### Advanced runtime inventory
 
 | Property | Value |
 | --- | --- |
@@ -128,6 +134,10 @@ Use `npm ci` to reproduce the lockfile. The manifest uses `latest` ranges; the t
 | Source reference entries | 100 |
 
 The source count represents reference entries; the validated bank produces ten unique course title/URL pairs.
+
+### Intermediate runtime inventory
+
+`public/easy-question-bank.json` is reviewed version 1.0.0, exam ID `pcao-f-practice-easy-01`, with the supplied title Independent PCAO-F Practice — Easy. It contains 60 questions, 120 minutes, 48 single-answer/10 select-two/2 select-three items, 252 options, complete explanations and 70 source entries that deduplicate to ten courses. Its domain distribution matches the shared contract below. SHA-256 is `f2a4f36183f2a30f79b83fc928389178e13151ea77a955819c890caf32992be4`; the build copy matches. The two banks remain separate, with one bank frozen per attempt.
 
 ### Seven domains
 
@@ -181,7 +191,7 @@ A future question, key, explanation, or source change requires a new dataset ver
 
 ### Stored record
 
-An attempt stores its ID, start timestamp, fixed deadline, status, current question ID, selections keyed by question ID, flags, dataset version, and a frozen validated bank snapshot.
+An attempt stores its ID, revision, start timestamp, fixed deadline, status, current question ID, selections keyed by question ID, flags, dataset version, and a frozen validated bank snapshot. Older records without a revision are still readable and use revision 0 for the next edit; no snapshot or grade migration is required. Browser writes hold a shared Web Lock, enforce the latest revision and submitted status, and synchronize other tabs through storage events. Existing indexed records use one write; failed multi-write additions roll back successful writes.
 
 Submitted records additionally hold submission time, reason (`manual` or `time expired`), and grading result. Recovery validates the snapshot, allowed selections, flags, deadline relationship, submission metadata, and any saved grade. Legacy reports without stored grades remain readable using their snapshots.
 
@@ -357,31 +367,32 @@ Storage failures, damaged indexes, replacement rollback, and retry behavior have
 
 ## 11. Testing and verification
 
-### Latest QA-fix verification
+### Latest Intermediate integration verification
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| TypeScript | Exit 0 | `test-results/qa-audit-fix-checks.txt` |
-| Vitest | 35 passed; 7 files | Same log |
-| Production build | Exit 0 | Same log; `dist/` |
-| Playwright / Chromium | 74 cases passed: 73 full-run passes, corrected touch test rerun passed | Same log |
-| Browser last-run state | Passed; no failed tests | `test-results/.last-run.json` |
+| TypeScript | Exit 0 | `test-results/intermediate-typecheck.txt` |
+| Vitest | 55 passed; 8 files | `test-results/intermediate-unit-tests.txt` |
+| Production build | Exit 0 | `test-results/intermediate-build.txt`; `dist/` |
+| Playwright / Chromium | 101 cases passed in one final full run; 9 files | `test-results/intermediate-browser-checks.txt` |
+| Browser last-run state | Passed; no failed tests | `.localtest/difficulty/browser-artifacts/.last-run.json` |
 | Dataset/reference hashes | Match recorded values | Rechecked for this consolidation |
 
-The recorded build contains approximately **507.54 kB** minified JavaScript (**151.67 kB** gzip) and **18.47 kB** CSS (**4.61 kB** gzip). Vite's JavaScript chunk-size warning above 500 kB is nonblocking; the build succeeds.
+The recorded build contains approximately **517.03 kB** minified JavaScript (**154.38 kB** gzip) and **20.49 kB** CSS (**4.95 kB** gzip). Vite's JavaScript chunk-size warning above 500 kB is nonblocking; the build succeeds.
 
 ### Unit test inventory
 
 | File | Tests | Coverage |
 | --- | ---: | --- |
 | [tests/bank.test.ts](tests/bank.test.ts) | 5 | Bank validation and invalid content |
-| [tests/attempt.test.ts](tests/attempt.test.ts) | 15 | Exact scoring, limits, snapshot/persistence rules, replacement, submission, and legacy grades |
+| [tests/attempt.test.ts](tests/attempt.test.ts) | 29 | Exact scoring, limits, snapshots, replacement, submission, legacy grades/revisions, stale writes, rollback, expired starts, and valid timestamp metadata |
 | [tests/markdown.test.tsx](tests/markdown.test.tsx) | 1 | Markdown and raw HTML nonexecution |
-| [tests/realBank.test.ts](tests/realBank.test.ts) | 2 | Actual reviewed bank and single/multiple grading |
+| [tests/realBank.test.ts](tests/realBank.test.ts) | 4 | Both reviewed banks, Intermediate hash/catalog, single/multiple grading and frozen difficulty |
 | [tests/results.test.ts](tests/results.test.ts) | 9 | Independent totals, filters, priorities, time, snapshots, four practice examples, exact/unrounded threshold |
 | [tests/courses.test.ts](tests/courses.test.ts) | 2 | Course-pair deduplication, course-only fields, ten courses from 100 references |
 | [tests/approvedContent.test.ts](tests/approvedContent.test.ts) | 1 | All approved stems/options/IDs/order/counts and reference hash |
-| **Total** | **35** | |
+| [tests/difficulty.test.ts](tests/difficulty.test.ts) | 4 | Availability, independent requests/cache, out-of-order completion and retry |
+| **Total** | **55** | |
 
 ### Browser test inventory
 
@@ -394,7 +405,9 @@ The recorded build contains approximately **507.54 kB** minified JavaScript (**1
 | [tests/browser/results.spec.ts](tests/browser/results.spec.ts) | 9 | Known totals, filters, explanations/sources, updated bank/new attempt, and six layouts |
 | [tests/browser/ui-update.spec.ts](tests/browser/ui-update.spec.ts) | 13 | Drawer layout/focus/links/scroll/dismissal/loading/retry/touch, unchanged storage, insufficient-selection refresh/grading, four legacy scores and original snapshots |
 | [tests/browser/audit-fixes.spec.ts](tests/browser/audit-fixes.spec.ts) | 14 | Answered flags (0/1/multiple), native refresh/Back warnings, cancellation/recovery, six leave-dialog layouts, expiry and controlled elapsed-time checks |
-| **Total** | **74** | |
+| [tests/browser/persistence-fixes.spec.ts](tests/browser/persistence-fixes.spec.ts) | 9 | Stale/simultaneous tabs, report synchronization, Start-page expiry, stable index writes, initial rollback, damaged dates, and unsupported saving |
+| [tests/browser/difficulty.spec.ts](tests/browser/difficulty.spec.ts) | 18 | Six selector layouts, real Intermediate flows, both-bank snapshots, replacement/back, expiry, sources, legacy reports, touch, errors/retry and response races |
+| **Total** | **101** | |
 
 The suite covers Start → Exam → Review → Results, refresh recovery, deadline expiry, saved reports, and a new attempt after a dataset update. Controlled clocks test expiry without waiting 120 real minutes.
 
@@ -407,10 +420,13 @@ The suite covers Start → Exam → Review → Results, refresh recovery, deadli
 | Results and full-flow completion | 28 passed | 47 passed | TypeScript/build and approved content integrity passed |
 | Course drawer and practice score update | 35 passed | 60 passed | TypeScript/build; source/course counts, threshold, persistence, accessibility and screenshots |
 | QA audit fixes | 35 passed | 74 cases passed across full run and touch rerun | TypeScript/build passed; native leave warnings, flags, one visible clock, loading and elapsed-time regressions |
+| Reliability fixes | 46 passed | 83 passed in one full run | TypeScript/build; shared locks and revisions, Start expiry, write consistency, timestamp recovery and stable test clocks |
+| Difficulty selection | 53 passed | 95 passed in one final full run | TypeScript/build; dialog, selected bank/difficulty, legacy recovery, layouts and corrected synchronization waits |
+| Intermediate integration | 55 passed | 101 passed in one final full run | TypeScript/build; both real banks, independent availability, snapshots, replacement, sources and retries |
 
-These are successive suite totals, not numbers to add together. Supplementary reruns repeat covered cases. Current 35/74 coverage supersedes the earlier 35/60 snapshot; the QA-fix full run had one outdated touch navigation expectation, corrected and passed on a focused rerun.
+These are successive suite totals, not numbers to add together. Supplementary reruns repeat covered cases. Current 55/101 coverage supersedes the earlier 53/95, 46/83, 35/74 and 35/60 snapshots; the QA-fix full run had one outdated touch navigation expectation, corrected and passed on a focused rerun.
 
-Earlier reports reference `test-results/exam-checks.txt` and `test-results/review-checks.txt`; those raw logs are absent from the current output directory. Historical reports remain. The retained `results-checks.txt` preserves the earlier clean 60-case full run. Current QA-fix results and the corrected touch rerun are retained in `qa-audit-fix-checks.txt`.
+Earlier reports reference `test-results/exam-checks.txt` and `test-results/review-checks.txt`; those raw logs are absent from the current output directory. Historical reports remain. The retained `results-checks.txt` preserves the earlier clean 60-case full run. Previous QA-fix results and the corrected touch rerun are retained in `qa-audit-fix-checks.txt`.
 
 ### Fixes and environment notes
 
@@ -556,9 +572,13 @@ node node_modules/@playwright/test/cli.js test --config playwright.ui-update.con
 
 ## 15. Remaining work and maintenance
 
+Git attributes pin both reviewed runtime banks and the approved Markdown reference to LF. Their index bytes match the reviewed source hashes, and focused real-bank/content-integrity checks passed before the requested commit and push. These rules preserve checksums across Windows and Unix checkouts.
+
 ### Remaining delivery work
 
-Publishing is deferred. This implementation establishes no public deployment, public URL, or hosting configuration. Deployment checks belong to the later publishing step.
+Difficulty UI approval, data validation and Intermediate integration are complete. Both reviewed banks are usable locally.
+
+Vercel deployment is authorized and its configuration is prepared, but no public deployment, live URL, or production smoke verification is established. Deployment remains a separate delivery step.
 
 No current-bank integration prerequisite remains for local use. The reviewed dataset passes actual validation, integrity, scoring, and full-flow checks.
 
@@ -568,7 +588,7 @@ Browser evidence is for Chromium, not Firefox or WebKit. Keyboard, touch, focus,
 
 Attempts are browser-local. Clearing storage removes local records. Cloud backup/account synchronization is not implemented.
 
-The nonblocking bundle-size warning remains; optional optimization is separate from completed functional work. Concurrency evidence covers repeated clicks and the tested overlapping expiry/manual events, not a backend or cross-device transaction system.
+The nonblocking bundle-size warning remains; optional optimization is separate from completed functional work. Concurrency evidence now covers simultaneous same-browser tabs under the shared lock, stale revisions, immutable submitted reports, repeated clicks, and overlapping expiry/manual events. It does not establish backend or cross-device transactions. Saving requires Web Locks; browsers without that API retain read-only report access.
 
 ### Maintenance rules
 
@@ -595,10 +615,19 @@ Git is initialized locally on `main`; `origin` targets `https://github.com/Muham
 | [README.md](README.md) | Quick local setup |
 | [package.json](package.json) and [package-lock.json](package-lock.json) | Commands and locked dependencies |
 | [test-results/results-checks.txt](test-results/results-checks.txt) | Historical clean 60-case full verification |
-| [test-results/qa-audit-fix-checks.txt](test-results/qa-audit-fix-checks.txt) | Current QA-fix checks and corrected touch rerun |
+| [test-results/reliability-fix-checks.txt](test-results/reliability-fix-checks.txt) | Historical 46-unit/83-Chromium reliability verification |
+| [test-results/qa-audit-fix-checks.txt](test-results/qa-audit-fix-checks.txt) | Historical QA-fix checks and corrected touch rerun |
 | [tests/fixtures/approved-question-content.md](tests/fixtures/approved-question-content.md) | Approved content reference |
 
 This unified record reconciles those documents with current source helpers, dataset statistics, hashes, lockfile, test inventory, and available evidence. Original reports remain unchanged. It does not replace runtime data or generate new question-review material.
+
+## Vercel deployment preparation — 2026-10-12
+
+The user authorized production deployment after the local implementation. Vercel CLI 59.17.0 is installed. Added `vercel.json` with the Vite preset, locked dependency installation (`npm ci`), `npm run build`, and `dist/` output. Added `.vercelignore` to exclude screenshots, tests, diagnostics, historical root bank copies and local helpers; `public/question-bank.json` remains included. Local `.vercel/` project links are Git-ignored.
+
+A fresh production build passed with the existing nonblocking 506 kB bundle warning. The built runtime bank matches the reviewed source checksum. Required build/runtime inputs remain included under the ignore rules. `vercel deploy --dry --json` could not inventory an unlinked project. Both `vercel whoami` and `vercel deploy --prod --yes --project pcao-f-practice-exam` failed with `connect EACCES 34.160.81.0:443` because the sandbox cannot contact Vercel. No project link, deployment URL or production smoke verification is established. The attempt log is `test-results/vercel-deployment-attempt.txt`.
+
+Complete deployment from a terminal with account/network access using `vercel --prod` in the repository root, selecting `pcao-f-practice-exam` when prompted. After a successful deployment, verify the live app and the runtime bank before recording a URL here. At this earlier deployment-preparation step, verification remained 35 unit and 60 Chromium cases; tests were not rerun for deployment-only configuration and documentation changes. The later QA-fix verification is recorded below.
 
 ## QA audit fixes — 2026-10-12
 
@@ -609,3 +638,53 @@ BUG-004 was already correct: a held bank request shows Loading and disables Star
 Verification: TypeScript, 35 Vitest tests, and build passed. The full 74-case Chromium run passed 73 cases; an existing touch test needed the new leave-confirmation tap, then passed its focused rerun. Six leave-dialog screenshots and updated review/confirmation captures were inspected at 320, 390, 768, 1366, landscape, and enlarged text; dialog bodies scroll where needed while heading/actions remain reachable. Bank checksum is unchanged.
 
 The sandbox denied Windows process cleanup, stalling initial browser runners. Final checks ran with permission outside the sandbox against the fresh preview on 4180; temporary runners/previews were stopped afterward. Use `node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 4180 --strictPort` and `node node_modules/@playwright/test/cli.js test --config test-results/qa-audit.playwright.config.ts` to repeat the browser checks. This fix is local; no deployment was performed during the QA-fix work.
+
+## Reliability fixes — 2026-10-13
+
+Resolved the four project-analysis findings. Shared Web Locks serialize browser mutations; optional saved-record revisions reject stale edits, submitted-report changes, and resurrection of replaced attempts. Storage events load newer answers or open the immutable submitted report in other tabs. Pending answer feedback remains immediate while the committed record is kept separately, and failed/conflicting saves reconcile to actual storage.
+
+Saved unfinished attempts are monitored on Start, including after reopening before the deadline. Expiry closes replacement confirmation and opens Results. A new start finalizes expired attempts before replacement, preserving their reports; queued expiry cannot navigate away from a newer attempt.
+
+Existing indexed attempts use a single record write. New additions restore successful writes after a later write failure, with explicit messaging if restoration fails. Recovery rejects unrenderable dates, reversed submission timestamps, incomplete submission metadata and deadline/reason inconsistencies. New timestamps are validated, and submission after a backward clock adjustment is bounded by the start time. Legacy records without revisions or stored grades remain supported.
+
+Controlled browser clocks now install before their pause target. Tests that inspect storage immediately after Start wait for the exam heading, reflecting coordinated asynchronous saving. Final verification passed TypeScript, 46 Vitest tests across 7 files, production build and all 83 Chromium cases across 8 files in one full run. Responsive, keyboard and touch cases cover 320, 390, 768 and 1366 pixels, mobile landscape and enlarged text. New `screenshots/submission-other-tab-320.png` and `screenshots/submission-other-tab-1366.png` were visually inspected; the saved-report message is visible and Results receives focus. Runtime, built-bank and approved-Markdown checksums are unchanged.
+
+Evidence: `test-results/reliability-fix-checks.txt`. The full production-preview run used port 4192 and `.localtest/reliability-fixes/playwright.config.ts`; temporary preview and test processes were stopped. The approximately 511 kB bundle warning remains nonblocking. These fixes are local; no deployment occurred. Earlier phase reports and verification logs remain historical records.
+
+## Project analysis verification — 2026-10-13
+
+A subsequent analysis reran TypeScript, all 46 unit tests and the production build successfully. The unchanged 83-case Chromium suite against a fresh production preview on port 4192 passed 80 cases and failed three. The enlarged-text leave/history test and the snapshot/resize test captured storage immediately after an asynchronous flag request; their baseline lacked the flag that appeared in the later comparison. Both passed a sequential focused rerun. The reload-after-submission test failed again because it reloaded immediately after clicking Confirm submission, before waiting for the Results view and leave-warning cleanup.
+
+Diagnostic copies under `.localtest/project-analysis/` added waits for the committed Flagged control and the Results heading. All three cases passed three repetitions each (9/9). Original app source and test files were not changed. This evidence supports test synchronization defects; it does not establish a new clean run of the unchanged full suite. The earlier 83/83 reliability-fix record remains historical evidence. See [PROJECT_ANALYSIS.md](PROJECT_ANALYSIS.md) for findings and recommended work.
+
+An isolated Chromium profile stored 27 approximately 190,173-character full attempt records before a `QuotaExceededError`. This is a diagnostic capacity observation, not a portable browser limit. Full snapshots and unlimited history make long-term storage management a maintenance concern. Runtime and approved-Markdown hashes remain unchanged. The build produced 510.81 kB JavaScript (152.75 kB gzip) with the existing nonblocking size warning. Mobile and desktop Results screenshots were inspected. No deployment was attempted during this analysis.
+
+## Difficulty selection initial mapping — 2026-10-13 (historical)
+
+All new-start actions open an Intermediate/Advanced segmented-selector dialog with comparison bullets. Intermediate uses the unchanged reviewed bank. Advanced is selectable for UI review, shows Coming soon and cannot start until its separate bank is supplied and enabled. Selection and abandonment confirmation share one modal; cancellation writes nothing, existing timers continue, expiry closes preparation and expired reports are preserved. New attempts save immutable difficulty metadata with their frozen snapshots; Exam, Results and history display it. Legacy records show Original exam and remain readable without migration. Source courses now identify the selected level and never reuse Intermediate links for Advanced.
+
+TypeScript, 53 unit tests across 8 files, build and all 95 Chromium cases across 9 files passed in one final full run. Keyboard, touch, focus, expiry, replacement, failed writes, cross-tab behavior, legacy reports and six layouts are covered. Mobile/desktop panels and scrolled narrow/enlarged layouts were visually inspected. The toggle stacks for enlarged text; heading and actions remain accessible. Bank/reference/built-bank hashes are unchanged. The 516.74 kB bundle warning remains nonblocking.
+
+See [DIFFICULTY_VERIFICATION.md](DIFFICULTY_VERIFICATION.md) for raw logs, screenshots and commands, and [DIFFICULTY_IMPLEMENTATION_PLAN.md](DIFFICULTY_IMPLEMENTATION_PLAN.md) for the approved staged plan. The local production preview on port 4210 is left running for UI review. UI approval and the actual Advanced bank are pending; no deployment was performed. Earlier verification and analysis records remain historical.
+
+## Difficulty bank mapping correction — 2026-10-13
+
+The user confirmed that the existing reviewed bank is Advanced. Advanced now uses `public/question-bank.json`, is selected by default and supports real starts; Intermediate is selectable for UI review but remains Coming soon with Start disabled. Its future bank is reserved at `public/question-bank-intermediate.json`. Source courses default to Advanced and show its ten validated courses; Intermediate displays an availability message. Saved attempts retain their recorded difficulty metadata and frozen snapshots; no migration or bank-content edit was performed.
+
+The corrected mapping passed TypeScript, 53 unit tests, production build and all 95 Chromium cases across 9 files in one final full run. Corrected screenshots were refreshed and mobile/desktop panels inspected. The runtime/built-bank checksum is unchanged. The corrected-mapping log is `test-results/difficulty-mapping-browser-checks.txt`; the initial run and its navigation-wait/filesystem issues are documented in the correction report.
+
+See [DIFFICULTY_MAPPING_CORRECTION.md](DIFFICULTY_MAPPING_CORRECTION.md) for verification and corrected screenshots. UI approval and the Intermediate bank remain pending. The local preview on port 4210 remains available; no deployment was performed.
+
+## Uploaded Intermediate bank validation — 2026-10-13
+
+The user approved the difficulty UI and uploaded `public/easy-question-bank.json`. Running the actual `validateQuestionBank(input)` with reviewed content required returned `ok: true`: schema 1, exam ID `pcao-f-practice-easy-01`, version 1.0.0, reviewed, 60 questions, 120 minutes, prescribed seven domain totals, 48 single-answer/10 select-two/2 select-three items, 252 options and 70 source entries. SHA-256: `f2a4f36183f2a30f79b83fc928389178e13151ea77a955819c890caf32992be4`. No bank, validator or runtime configuration changes were made.
+
+See [EASY_BANK_VALIDATION.md](EASY_BANK_VALIDATION.md) and `test-results/easy-bank-validation.json`. UI approval and data validation are complete; runtime integration is pending. This is a data-contract check, not an independent answer-key review or another full-app test/build. Earlier full-app verification remains 53 unit and 95 Chromium cases.
+
+## Intermediate bank integration — 2026-10-13
+
+Connected the user-supplied reviewed `public/easy-question-bank.json` to Intermediate and enabled both banks. Advanced remains the default and uses the unchanged original file. Both banks load independently; either ready bank permits selection, and each selected bank must validate before starting. Home identifies level/dataset versions and retries failures without blocking the other bank. Source courses use the selected bank. Existing snapshots and difficulty metadata are preserved, including after bank changes and starts at the other level.
+
+Final checks passed TypeScript, 55 unit tests across 8 files, build and all 101 Chromium cases across 9 files in one full run. Actual Intermediate mobile/desktop answering, resume, scoring, frozen reports, cross-level starts, confirmed replacement, touch, missing/invalid bank retry and late-response switching were verified. Six selector layouts and new mobile/desktop screenshots were inspected; extra course-drawer overflow checks passed. Runtime/built hashes for both banks are unchanged.
+
+Evidence: [INTERMEDIATE_INTEGRATION_VERIFICATION.md](INTERMEDIATE_INTEGRATION_VERIFICATION.md) and `test-results/intermediate-{typecheck,unit-tests,build,browser-checks}.txt`. The preview on port 4210 remains running. UI approval and local integration are complete; publishing remains separate. Earlier validation/mapping/Phase 1 records remain historical.

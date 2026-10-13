@@ -1,6 +1,7 @@
 import { useState, type RefObject } from 'react';
 import { type Attempt } from '../domain/attempt';
 import type { Question } from '../domain/bank';
+import { difficultyLabel } from '../domain/difficulty';
 import { matchesResultFilter, questionOutcome, summarizeResults, type ResultFilter } from '../domain/results';
 import { MarkdownContent } from './MarkdownContent';
 import { Button, Card } from './primitives';
@@ -78,7 +79,7 @@ export function ResultsPage({ attempt, headingRef, canStart, onStart, onHistory 
   const visible = attempt.snapshot.questions.map((question, index) => ({ question, index }))
     .filter(({ question }) => matchesResultFilter(attempt, question, filter));
   return <>
-    <p className="eyebrow">Practice report · dataset {attempt.datasetVersion}</p>
+    <p className="eyebrow">{difficultyLabel(attempt.difficulty)} · Practice report · dataset {attempt.datasetVersion}</p>
     <h1 ref={headingRef} tabIndex={-1}>Your results</h1>
     <p className="lead">{attempt.snapshot.title}</p>
     <div className="result-cards">
@@ -100,6 +101,7 @@ export function ResultsPage({ attempt, headingRef, canStart, onStart, onHistory 
       <div><dt>Time used</dt><dd>{elapsedTime(timeUsedMilliseconds)} <span className="muted">of {attempt.snapshot.durationMinutes} minutes</span></dd></div>
       <div><dt>Submission</dt><dd>{attempt.submissionReason === 'time expired' ? 'Time expired — automatically submitted' : 'Manual submission'}</dd></div>
       <div><dt>Dataset version</dt><dd>{attempt.datasetVersion}</dd></div>
+      <div><dt>Difficulty</dt><dd>{difficultyLabel(attempt.difficulty)}</dd></div>
     </dl>
     <div className="result-actions"><Button onClick={onHistory}>Attempt history</Button><Button variant="primary" disabled={!canStart} onClick={onStart}>Start new attempt</Button></div>
     <Card className="domain-card">

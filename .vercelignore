@@ -1,0 +1,15 @@
+.git/
+.localtest/
+test-results/
+screenshots/
+tests/
+dist/
+node_modules/
+%SystemDrive%/
+debug.log
+*.md
+/PCAOF-question-bank-v1.1.0-de3c2c3f.json
+/PCAOF-question-bank-v1.1.0-reviewed.json
+/question-bank.json
+/question-bank-corrected.json
+playwright*.ts
