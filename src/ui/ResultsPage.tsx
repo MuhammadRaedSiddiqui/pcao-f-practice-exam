@@ -1,4 +1,4 @@
-import { useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { type Attempt } from '../domain/attempt';
 import type { Question } from '../domain/bank';
 import { difficultyLabel } from '../domain/difficulty';
@@ -13,6 +13,15 @@ type Props = {
   onStart: () => void;
   onHistory: () => void;
 };
+
+let reportPdfModule: Promise<typeof import('./reportPdf')> | undefined;
+function loadReportPdf() {
+  reportPdfModule ??= import('./reportPdf').catch(error => {
+    reportPdfModule = undefined;
+    throw error;
+  });
+  return reportPdfModule;
+}
 
 function dateTime(timestamp: number): string {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(timestamp);
@@ -74,6 +83,47 @@ function QuestionReview({ attempt, question, index }: { attempt: Attempt; questi
 
 export function ResultsPage({ attempt, headingRef, canStart, onStart, onHistory }: Props) {
   const [filter, setFilter] = useState<ResultFilter>('all');
+  const [exportError, setExportError] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const exportOpener = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    // Load only for Results; keep generation available after going offline.
+    void loadReportPdf().catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (exporting) return;
+    const opener = exportOpener.current;
+    exportOpener.current = null;
+    if (opener?.isConnected && document.activeElement === document.body) opener.focus({ preventScroll: true });
+  }, [exporting]);
+  async function exportReport() {
+    if (exporting) return;
+    const opener = document.activeElement;
+    exportOpener.current = opener instanceof HTMLElement ? opener : null;
+    setExportError(false);
+    setExporting(true);
+    try {
+      const { createReportPdf } = await loadReportPdf();
+      const report = await createReportPdf(attempt);
+      const url = URL.createObjectURL(report.blob);
+      const link = document.createElement('a');
+      try {
+        link.href = url;
+        link.download = report.filename;
+        link.hidden = true;
+        document.body.append(link);
+        link.click();
+      } finally {
+        link.remove();
+        // Let the browser begin reading the download before releasing its URL.
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+    } catch {
+      setExportError(true);
+    } finally {
+      setExporting(false);
+    }
+  }
   const { score, practiceScore, passed, counts, domains, focusDomains, timeUsedMilliseconds } = summarizeResults(attempt);
   const filterCounts = { all: score.total, incorrect: counts.incorrect, unanswered: counts.unanswered, flagged: attempt.flags.length };
   const visible = attempt.snapshot.questions.map((question, index) => ({ question, index }))
@@ -103,7 +153,8 @@ export function ResultsPage({ attempt, headingRef, canStart, onStart, onHistory 
       <div><dt>Dataset version</dt><dd>{attempt.datasetVersion}</dd></div>
       <div><dt>Difficulty</dt><dd>{difficultyLabel(attempt.difficulty)}</dd></div>
     </dl>
-    <div className="result-actions"><Button onClick={onHistory}>Attempt history</Button><Button variant="primary" disabled={!canStart} onClick={onStart}>Start new attempt</Button></div>
+    <div className="result-actions"><Button onClick={onHistory}>Attempt history</Button><Button disabled={exporting} aria-busy={exporting} onClick={exportReport}>{exporting ? 'Preparing PDF...' : 'Export report (PDF)'}</Button><Button variant="primary" disabled={!canStart} onClick={onStart}>Start new attempt</Button></div>
+    {exportError && <p role="alert">The report could not be exported. Please try again.</p>}
     <Card className="domain-card">
       <h2>By domain</h2>
       <div className="domain-list">{domains.map(domain => <div className="domain-row" key={domain.id} data-domain-id={domain.id}>
