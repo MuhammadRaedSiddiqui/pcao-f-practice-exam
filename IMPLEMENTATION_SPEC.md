@@ -60,7 +60,7 @@ Selection precedes the existing abandonment confirmation. A validated selected b
 
 New saved attempts include optional `difficulty: "intermediate" | "advanced"` metadata alongside their original frozen snapshots. Recovery validates the enum; saving an existing attempt rejects changes to its difficulty. Edits, resume and submission retain it. Exam, Results and history display the saved level. Older records lacking metadata display "Original exam" without modifying their snapshots or scores. Resume and Open report bypass the selector.
 
-The Source courses drawer has the same level selector and identifies the bank its list describes. Each level derives ten course links from its own validated bank (Advanced: 100 references; Intermediate: 70). The approved comparison copy remains associated with the respective levels. Test fixtures remain outside runtime data. The supplied title "Independent PCAO-F Practice — Easy" is preserved while its app difficulty is Intermediate.
+The Source courses drawer has the same level selector and identifies the bank its list describes. Each level derives ten course links from its own validated bank (Advanced: 100 references; Intermediate: 70). The approved comparison copy remains associated with the respective levels. Test fixtures remain outside runtime data. The supplied title "Independent PCAO-F Practice — Easy" is preserved in the bank and frozen snapshots. For attempts saved with Intermediate difficulty, Results and PDF reports display that title as "Independent PCAO-F Practice — Intermediate". Other titles and records without difficulty metadata retain their saved title.
 
 ## Responsive and accessible interface
 

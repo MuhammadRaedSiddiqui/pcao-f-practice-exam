@@ -1,6 +1,6 @@
 # PCAO-F Practice — Unified Implementation and Project Status
 
-**Status date:** 2026-10-13\
+**Status date:** 2026-10-14\
 **Project:** Independent PCAO-F Practice  
 **Workspace:** `C:\Users\HP\OneDrive\Desktop\PCAO-F`  
 **Delivery state:** User-approved difficulty UI and both reviewed banks integrated and verified locally. Publishing remains a separate step.
@@ -27,6 +27,8 @@ This document combines all implemented features, current project status, data ru
 16. [Source records](#16-source-records)
 
 ## 1. Current status
+
+BUG-007 is fixed locally on **2026-10-14**: Intermediate Results and PDF reports display `Independent PCAO-F Practice — Intermediate` instead of the original bank's `— Easy` title. A shared presentation helper uses saved difficulty metadata; the reviewed banks and frozen snapshots remain unchanged. Advanced, legacy and custom titles retain their original text. TypeScript, all 69 unit tests across 9 files and the production build pass. All six report layouts pass (320, 390, 768, 1366, landscape and enlarged text), including keyboard opening, heading focus and overflow checks. Mobile/desktop screenshots `screenshots/bug-007-report-title-{390,1366}.png` were visually inspected. Actual Intermediate PDF content and touch export pass. Verification logs are `test-results/bug-007-{typecheck,unit-tests,build,browser}.txt`; the Advanced PDF case initially exceeded its 30-second timeout, then passed with a 120-second limit (30.2 seconds) in `test-results/bug-007-pdf-rerun.txt`. All 9 targeted browser cases pass across the main run and focused rerun. This targeted verification does not replace the earlier full-suite evidence. No deployment occurred for BUG-007.
 
 The complete approved flow is implemented:
 

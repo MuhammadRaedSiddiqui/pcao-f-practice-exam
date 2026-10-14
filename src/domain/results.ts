@@ -4,6 +4,14 @@ import type { Question } from './bank';
 export type QuestionOutcome = 'correct' | 'incorrect' | 'unanswered';
 export type ResultFilter = 'all' | 'incorrect' | 'unanswered' | 'flagged';
 
+export function resultTitle(attempt: Attempt): string {
+  // The reviewed Intermediate bank retains its original title in frozen snapshots.
+  const title = attempt.snapshot.title;
+  return attempt.difficulty === 'intermediate' && title === 'Independent PCAO-F Practice — Easy'
+    ? 'Independent PCAO-F Practice — Intermediate'
+    : title;
+}
+
 export function questionOutcome(question: Question, selections: readonly string[]): QuestionOutcome {
   if (selections.length === 0) return 'unanswered';
   return isExactSet(question, selections) ? 'correct' : 'incorrect';

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { type Attempt } from '../domain/attempt';
 import type { Question } from '../domain/bank';
 import { difficultyLabel } from '../domain/difficulty';
-import { matchesResultFilter, questionOutcome, summarizeResults, type ResultFilter } from '../domain/results';
+import { matchesResultFilter, questionOutcome, resultTitle, summarizeResults, type ResultFilter } from '../domain/results';
 import { MarkdownContent } from './MarkdownContent';
 import { Button, Card } from './primitives';
 
@@ -131,7 +131,7 @@ export function ResultsPage({ attempt, headingRef, canStart, onStart, onHistory 
   return <>
     <p className="eyebrow">{difficultyLabel(attempt.difficulty)} · Practice report · dataset {attempt.datasetVersion}</p>
     <h1 ref={headingRef} tabIndex={-1}>Your results</h1>
-    <p className="lead">{attempt.snapshot.title}</p>
+    <p className="lead">{resultTitle(attempt)}</p>
     <div className="result-cards">
       <Card className="practice-score-card"><p className="eyebrow">Practice score</p><strong className="result-number">{practiceScore} / 1000</strong>
         <span className={'practice-status practice-status--' + (passed ? 'passed' : 'failed')}>{passed ? 'Passed' : 'Failed'}</span>

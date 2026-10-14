@@ -46,6 +46,19 @@ describe('saved PDF result report', () => {
     expect(report.filename).toContain(`pcao-f-${difficulty}-report-`);
   });
 
+  it.each([
+    ['intermediate', 'Independent PCAO-F Practice — Easy', 'Independent PCAO-F Practice — Intermediate'],
+    ['advanced', 'Independent PCAO-F Practice', 'Independent PCAO-F Practice'],
+    [undefined, 'Independent PCAO-F Practice — Easy', 'Independent PCAO-F Practice — Easy'],
+    ['intermediate', 'Custom saved title', 'Custom saved title'],
+  ] as const)('displays the saved %s report title without mutating its snapshot', (difficulty, title, expected) => {
+    const fixture = syntheticResultsAttempt();
+    const attempt = { ...fixture, difficulty, snapshot: { ...fixture.snapshot, title } };
+    const before = JSON.stringify(attempt);
+    expect(buildResultReport(attempt).title).toBe(expected);
+    expect(JSON.stringify(attempt)).toBe(before);
+  });
+
   it('regrades legacy reports without needing a stored grade', () => {
     const attempt = syntheticResultsAttempt();
     delete attempt.result;

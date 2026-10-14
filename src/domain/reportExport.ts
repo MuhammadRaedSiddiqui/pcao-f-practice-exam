@@ -1,6 +1,6 @@
 ﻿import type { Attempt } from './attempt';
 import { difficultyLabel } from './difficulty';
-import { questionOutcome, summarizeResults } from './results';
+import { questionOutcome, resultTitle, summarizeResults } from './results';
 
 /** Build the complete saved report independently of the visible review filter. */
 export function buildResultReport(attempt: Attempt) {
@@ -13,7 +13,7 @@ export function buildResultReport(attempt: Attempt) {
   return {
     ...summary,
     filename: `pcao-f-${attempt.difficulty ?? 'original'}-report-${submitted.slice(0, 10)}-${safeId}.pdf`,
-    title: attempt.snapshot.title,
+    title: resultTitle(attempt),
     attemptId: attempt.id,
     examId: attempt.snapshot.examId,
     difficulty: difficultyLabel(attempt.difficulty),

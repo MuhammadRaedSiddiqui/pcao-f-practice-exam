@@ -137,7 +137,11 @@ for (const difficulty of ['advanced', 'intermediate'] as const) {
     newer.questions[0].stemMarkdown = 'Synthetic later bank content used only for export testing.';
     await page.route('**' + bankPath, route => route.fulfill({ json: newer }));
     await openReport(page, attempt);
+    const expectedTitle = difficulty === 'intermediate'
+      ? 'Independent PCAO-F Practice — Intermediate' : 'Independent PCAO-F Practice';
+    await expect(page.locator('main .lead')).toHaveText(expectedTitle);
     const report = await downloadedReport(page, () => page.getByRole('button', { name: 'Export report (PDF)', exact: true }).click());
+    expect(report.content).toContain(expectedTitle);
     expect(report.filename).toBe(`pcao-f-${difficulty}-report-2026-10-12-${difficulty}-export.pdf`);
     expect(report.content).toContain('0 / 1000');
     expect(report.content).toContain('Unanswered 60');
