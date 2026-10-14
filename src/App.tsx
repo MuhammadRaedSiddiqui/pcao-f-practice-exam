@@ -94,9 +94,9 @@ export function App() {
 
   function openDifficulty() {
     if (!supportsSaving || historyLoading || historyErrors.length || starting.current) return;
-    updatePreparation({ difficulty: 'advanced' });
+    updatePreparation({ difficulty: 'intermediate' });
     setMessage('');
-    void ensureBank('advanced');
+    void ensureBank('intermediate');
   }
 
   function closePreparation() {
@@ -552,7 +552,7 @@ export function App() {
         {view === 'results' && attempt?.status === 'submitted' && <ResultsPage key={attempt.id}
           attempt={attempt} headingRef={resultsHeading} canStart={canStart} onStart={openDifficulty}
           onHistory={showHistory} />}
-        <DifficultySelectionDialog preparation={preparation} bankState={bankStates[preparation?.difficulty ?? 'advanced']}
+        <DifficultySelectionDialog preparation={preparation} bankState={bankStates[preparation?.difficulty ?? 'intermediate']}
           busy={startPending} canSave={supportsSaving && !historyLoading && historyErrors.length === 0}
           hasUnfinished={unfinished.length > 0} message={message}
           onSelect={chooseDifficulty} onClose={closePreparation}

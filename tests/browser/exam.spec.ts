@@ -18,7 +18,8 @@ test('complete means required cardinality, partial answers persist, and checkbox
   const bank = await (await request.get('/question-bank.json')).json();
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Previous', exact: true })).toBeDisabled();
   const incorrect = bank.questions[0].options.find((option: { id: string }) => !bank.questions[0].correctOptionIds.includes(option.id));
   await page.locator('input[value="' + incorrect.id + '"]').check();
@@ -72,7 +73,8 @@ test('deadline catches up after suspended ticks and repeated expiry events final
   await installPausedClock(page, instant);
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await page.getByRole('radio').nth(0).check();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await page.getByRole('radio').nth(1).check();
@@ -120,7 +122,8 @@ test('interval expiry continues in review and answers cannot change after the de
   await installPausedClock(page, instant);
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await page.getByRole('radio').first().check();
   await page.getByRole('button', { name: 'Review & submit' }).click();
   await page.clock.fastForward(120 * 60_000);
@@ -128,7 +131,8 @@ test('interval expiry continues in review and answers cannot change after the de
   expect((await storedAttempt(page)).submissionReason).toBe('time expired');
   await reloadPage(page);
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   const before = await storedAttempt(page);
   await page.clock.setSystemTime(before.deadlineAt);
@@ -141,7 +145,8 @@ test('interval expiry continues in review and answers cannot change after the de
 test('refresh and reopening use the original deadline and auto-submit expired saved attempts', async ({ page, context }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await page.getByRole('radio').first().check();
   const saved = await storedAttempt(page);
   await reloadPage(page);
@@ -171,7 +176,8 @@ test('refresh and reopening use the original deadline and auto-submit expired sa
 test('failed saves keep recorded answers, flags and position until storage recovers', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   const before = await storedAttempt(page);
   await page.evaluate(() => {
@@ -216,7 +222,8 @@ for (const viewport of [
     await page.goto('/');
     if (viewport.name === 'enlarged') await page.evaluate(() => { document.body.style.fontSize = '24px'; });
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+    await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+    await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
     await jump(page, 3);
     await expect(page.locator('.question-stem .markdown > p')).toHaveCount(3);
     await expect(page.locator('.question-stem table tbody tr')).toHaveCount(6);

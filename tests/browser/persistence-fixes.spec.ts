@@ -21,7 +21,8 @@ for (const width of [320, 1366]) {
     await page.setViewportSize({ width, height: 768 });
     await page.goto('/');
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+    await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+    await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
     const other = await context.newPage();
     await other.setViewportSize({ width, height: 768 });
     await suppressStorageEvents(other);
@@ -44,7 +45,8 @@ for (const width of [320, 1366]) {
 test('other tabs automatically show the saved submitted report', async ({ page, context }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   const other = await context.newPage();
   await other.goto('/');
   await other.getByRole('button', { name: 'Resume attempt', exact: true }).click();
@@ -59,7 +61,8 @@ test('other tabs automatically show the saved submitted report', async ({ page, 
 test('simultaneous stale edits serialize and one receives a recoverable conflict', async ({ page, context }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   const other = await context.newPage();
   await suppressStorageEvents(other);
   await other.goto('/');
@@ -106,7 +109,8 @@ test('an attempt reopened before its deadline expires on Start and closes replac
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Resume attempt', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Start another exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Start another exam?' })).toBeVisible();
   await page.clock.fastForward(3000);
   await expect(page.getByRole('heading', { name: 'Your results' })).toBeFocused();
@@ -116,7 +120,8 @@ test('an attempt reopened before its deadline expires on Start and closes replac
   expect(report).toMatchObject({ status: 'submitted', submissionReason: 'time expired', answers: attempt.answers, flags: attempt.flags });
   expect(report.snapshot).toEqual(attempt.snapshot);
   await page.getByRole('button', { name: 'Start new attempt', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60' })).toBeVisible();
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('pcao-f:attempt-ids:v1')!))).toHaveLength(2);
 });
@@ -124,7 +129,8 @@ test('an attempt reopened before its deadline expires on Start and closes replac
 test('answering and submission do not rewrite an existing history index', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   await page.evaluate(() => {
     const original = Storage.prototype.setItem;
@@ -153,7 +159,8 @@ test('a failed initial history write leaves no hidden attempt record', async ({ 
     };
   });
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('exam could not be saved');
   expect(await page.evaluate(() => Object.keys(localStorage).filter(key => key.startsWith('pcao-f:attempt')))).toEqual([]);
 });

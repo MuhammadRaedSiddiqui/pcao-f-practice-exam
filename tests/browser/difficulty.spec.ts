@@ -26,9 +26,18 @@ for (const viewport of viewports) {
     await opener.click();
     const dialog = page.getByRole('dialog', { name: 'Choose exam difficulty' });
     await expect(dialog.getByRole('heading', { name: 'Choose exam difficulty', exact: true })).toBeFocused();
+    await expect(dialog.getByRole('radio', { name: 'Intermediate', exact: true })).toBeChecked();
+    await expect(dialog.getByRole('button', { name: 'Start Exam', exact: true })).toBeEnabled();
+    await page.screenshot({ path: 'screenshots/default-intermediate-' + viewport.name + '.png' });
+    await dialog.getByRole('radio', { name: 'Advanced', exact: true }).check();
     await expect(dialog.getByRole('radio', { name: 'Advanced', exact: true })).toBeChecked();
     await expect(dialog).toContainText('Compared with Intermediate');
-    await expect(dialog.getByRole('button', { name: 'Start Advanced exam', exact: true })).toBeEnabled();
+    await expect(dialog.locator('.difficulty-points li')).toHaveText([
+      'Longer scenarios with more details to track.',
+      'More interacting constraints and tradeoffs.',
+      'More detailed tables, records, and supporting evidence.',
+    ]);
+    await expect(dialog.getByRole('button', { name: 'Start Exam', exact: true })).toBeEnabled();
     for (const input of await dialog.getByRole('radio').all()) {
       const target = (await input.boundingBox())!;
       expect(target.width).toBeGreaterThanOrEqual(44);
@@ -37,7 +46,7 @@ for (const viewport of viewports) {
     await page.screenshot({ path: 'screenshots/difficulty-advanced-' + viewport.name + '.png' });
     if (viewport.name === 'landscape' || viewport.name === 'enlarged' || viewport.name === '320') {
       await dialog.locator('.dialog__body').evaluate(element => { element.scrollTop = element.scrollHeight; });
-      await expect(dialog.getByRole('button', { name: 'Start Advanced exam', exact: true })).toBeInViewport();
+      await expect(dialog.getByRole('button', { name: 'Start Exam', exact: true })).toBeInViewport();
       await page.screenshot({ path: 'screenshots/difficulty-advanced-scrolled-' + viewport.name + '.png' });
       await dialog.locator('.dialog__body').evaluate(element => { element.scrollTop = 0; });
     }
@@ -45,9 +54,13 @@ for (const viewport of viewports) {
     await page.keyboard.press('ArrowLeft');
     await expect(dialog.getByRole('radio', { name: 'Intermediate', exact: true })).toBeChecked();
     await expect(dialog).toContainText('Compared with Advanced');
-    await expect(dialog).toContainText('More focused scenarios with fewer competing constraints');
+    await expect(dialog.locator('.difficulty-points li')).toHaveText([
+      'Shorter, more focused scenarios.',
+      'Fewer interacting constraints per decision.',
+      'More compact tables and supporting evidence.',
+    ]);
     await expect(dialog).not.toContainText('Coming soon');
-    await expect(dialog.getByRole('button', { name: 'Start Intermediate exam', exact: true })).toBeEnabled();
+    await expect(dialog.getByRole('button', { name: 'Start Exam', exact: true })).toBeEnabled();
     await expect(dialog.locator('.difficulty-facts')).toContainText('60');
     await expect(dialog.locator('.difficulty-facts')).toContainText('120 minutes');
     expect(await storage(page)).toEqual(before);
@@ -59,7 +72,7 @@ for (const viewport of viewports) {
     }
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).focus();
     await page.keyboard.press('Tab');
-    await expect(dialog.getByRole('button', { name: 'Start Intermediate exam', exact: true })).toBeFocused();
+    await expect(dialog.getByRole('button', { name: 'Start Exam', exact: true })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(dialog.getByRole('button', { name: 'Close dialog', exact: true })).toBeFocused();
     const box = (await dialog.boundingBox())!;
@@ -72,7 +85,11 @@ for (const viewport of viewports) {
     await expect(opener).toBeFocused();
     expect(await storage(page)).toEqual(before);
     await opener.click();
-    await expect(dialog.getByRole('radio', { name: 'Advanced', exact: true })).toBeChecked();
+    await expect(dialog.getByRole('radio', { name: 'Intermediate', exact: true })).toBeChecked();
+    await dialog.getByRole('radio', { name: 'Advanced', exact: true }).check();
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await opener.click();
+    await expect(dialog.getByRole('radio', { name: 'Intermediate', exact: true })).toBeChecked();
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
     await expect(opener).toBeFocused();
   });
@@ -81,7 +98,8 @@ for (const viewport of viewports) {
 test('Advanced persists in Exam, Results and history; new starts from Results use the selector', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   await expect(page.locator('.exam-bar')).toContainText('Advanced');
   const active = await storage(page);
@@ -97,6 +115,7 @@ test('Advanced persists in Exam, Results and history; new starts from Results us
   await expect(page.locator('.result-metadata')).toContainText('DifficultyAdvanced');
   await page.getByRole('button', { name: 'Start new attempt', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Choose exam difficulty' })).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Intermediate', exact: true })).toBeChecked();
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.getByRole('button', { name: 'Attempt history', exact: true }).first().click();
   await expect(page.locator('.history-row')).toContainText('Advanced');
@@ -107,16 +126,18 @@ test('replacement preparation preserves the attempt on back and starts the confi
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Attempt history', exact: true }).click();
   await page.getByRole('button', { name: 'Go to attempt history', exact: true }).click();
   const before = await storage(page);
   await page.getByRole('button', { name: 'Start another exam', exact: true }).click();
+  await expect(page.getByRole('radio', { name: 'Intermediate', exact: true })).toBeChecked();
   await page.getByRole('radio', { name: 'Intermediate', exact: true }).check();
-  await expect(page.getByRole('button', { name: 'Start Intermediate exam', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Start Exam', exact: true })).toBeEnabled();
   expect(await storage(page)).toEqual(before);
-  await page.getByRole('button', { name: 'Start Intermediate exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   const replacement = page.getByRole('dialog', { name: 'Start another exam?' });
   await expect(replacement).toContainText('Intermediate');
   await expect(replacement).toContainText('timer is still running');
@@ -128,7 +149,7 @@ test('replacement preparation preserves the attempt on back and starts the confi
   await selector.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.getByRole('button', { name: 'Start another exam', exact: true }).click();
   await page.getByRole('radio', { name: 'Intermediate', exact: true }).check();
-  await page.getByRole('button', { name: 'Start Intermediate exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await page.getByRole('button', { name: 'Abandon and start Intermediate exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   const next = await storage(page);
@@ -210,9 +231,9 @@ test('touch selection can start Intermediate', async ({ browser }) => {
     const page = await context.newPage();
     await page.goto(test.info().project.use.baseURL!);
     await page.getByRole('button', { name: 'Start exam', exact: true }).tap();
-    await page.getByRole('radio', { name: 'Intermediate', exact: true }).tap();
-    await expect(page.getByRole('button', { name: 'Start Intermediate exam', exact: true })).toBeEnabled();
-    await page.getByRole('button', { name: 'Start Intermediate exam', exact: true }).tap();
+    await expect(page.getByRole('radio', { name: 'Intermediate', exact: true })).toBeChecked();
+    await expect(page.getByRole('button', { name: 'Start Exam', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: 'Start Exam', exact: true }).tap();
     await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
     await expect(page.locator('.exam-bar')).toContainText('Intermediate');
   } finally { await context.close(); }
@@ -225,8 +246,8 @@ for (const width of [320, 1366]) {
     const advanced = await (await request.get('/question-bank.json')).json();
     await page.goto('/');
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-    await page.getByRole('radio', { name: 'Intermediate', exact: true }).check();
-    await page.getByRole('button', { name: 'Start Intermediate exam', exact: true }).click();
+    await expect(page.getByRole('radio', { name: 'Intermediate', exact: true })).toBeChecked();
+    await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeFocused();
     await expect(page.locator('.exam-bar')).toContainText('Intermediate');
     await expect(page.locator('.exam-bar')).toContainText(bank.title);
@@ -276,7 +297,8 @@ for (const width of [320, 1366]) {
     await expect(page.locator('.review-item').first()).not.toContainText('Updated Intermediate content for testing only.');
     expect((await storage(page))[key]).toEqual(report);
     await page.getByRole('button', { name: 'Start new attempt', exact: true }).click();
-    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+    await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+    await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
     const saved = await storage(page);
     const activeId = JSON.parse(saved['pcao-f:attempt-ids:v1'])[0];
@@ -299,17 +321,17 @@ for (const invalid of [false, true]) {
     const dialog = page.getByRole('dialog', { name: 'Choose exam difficulty' });
     await dialog.getByRole('radio', { name: 'Intermediate', exact: true }).check();
     await expect(dialog.getByRole('status')).toContainText('Loading the Intermediate');
-    await expect(dialog.getByRole('button', { name: 'Start Intermediate exam', exact: true })).toBeDisabled();
+    await expect(dialog.getByRole('button', { name: 'Start Exam', exact: true })).toBeDisabled();
     release();
     await expect(dialog.getByRole('alert')).toContainText('Intermediate question bank is unavailable or incomplete');
     expect(await storage(page)).toEqual({});
     await dialog.getByRole('radio', { name: 'Advanced', exact: true }).check();
-    await expect(dialog.getByRole('button', { name: 'Start Advanced exam', exact: true })).toBeEnabled();
+    await expect(dialog.getByRole('button', { name: 'Start Exam', exact: true })).toBeEnabled();
     await dialog.getByRole('radio', { name: 'Intermediate', exact: true }).check();
     await page.unroute('**/easy-question-bank.json');
     await dialog.getByRole('button', { name: 'Retry loading', exact: true }).click();
-    await expect(dialog.getByRole('button', { name: 'Start Intermediate exam', exact: true })).toBeEnabled();
-    await dialog.getByRole('button', { name: 'Start Intermediate exam', exact: true }).click();
+    await expect(dialog.getByRole('button', { name: 'Start Exam', exact: true })).toBeEnabled();
+    await dialog.getByRole('button', { name: 'Start Exam', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
     const saved = await storage(page);
     const id = JSON.parse(saved['pcao-f:attempt-ids:v1'])[0];
@@ -323,9 +345,10 @@ test('a missing Advanced bank does not block starting Intermediate', async ({ pa
   await expect(page.getByRole('button', { name: 'Start exam', exact: true })).toBeEnabled();
   await expect(page.getByRole('alert')).toContainText('Advanced question bank is unavailable');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Start Advanced exam', exact: true })).toBeDisabled();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await expect(page.getByRole('button', { name: 'Start Exam', exact: true })).toBeDisabled();
   await page.getByRole('radio', { name: 'Intermediate', exact: true }).check();
-  await page.getByRole('button', { name: 'Start Intermediate exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   await expect(page.locator('.exam-bar')).toContainText('Intermediate');
 });
@@ -339,11 +362,11 @@ test('a late Intermediate response cannot change an Advanced start during rapid 
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
   await page.getByRole('radio', { name: 'Intermediate', exact: true }).check();
-  await expect(page.getByRole('button', { name: 'Start Intermediate exam', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Start Exam', exact: true })).toBeDisabled();
   await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
   await page.getByRole('radio', { name: 'Intermediate', exact: true }).check();
   await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   release();
   const saved = await storage(page);

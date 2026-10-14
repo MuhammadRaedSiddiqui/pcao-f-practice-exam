@@ -31,7 +31,7 @@ export function DifficultySelectionDialog({
   return <Dialog open={preparation !== null} title={unfinished ? 'Start another exam?' : 'Choose exam difficulty'} onClose={onClose} closeDisabled={busy}
     actions={unfinished
       ? <><Button disabled={busy} onClick={onBack}>Keep unfinished attempt</Button><Button variant="primary" disabled={!canStart} onClick={onStart}>{busy ? 'Starting exam…' : `Abandon and start ${level.label} exam`}</Button></>
-      : <><Button disabled={busy} onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!canStart} onClick={onStart}>{busy ? 'Starting exam…' : `Start ${level.label} exam`}</Button></>}>
+      : <><Button disabled={busy} onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!canStart} onClick={onStart}>{busy ? 'Starting exam…' : 'Start Exam'}</Button></>}>
     {message && <div className="validation-message" role="alert">{message}</div>}
     {unfinished ? <>
       <p>Starting an <strong>{level.label}</strong> exam will permanently discard {unfinished.length === 1 ? 'your unfinished attempt' : `your ${unfinished.length} unfinished attempts`}, including saved answers and flags. No report will be created for it.</p>

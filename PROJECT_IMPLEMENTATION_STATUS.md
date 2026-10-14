@@ -28,6 +28,14 @@ This document combines all implemented features, current project status, data ru
 
 ## 1. Current status
 
+**Documentation audit — 2026-10-14:** README.md and AGENTS.md were synchronized with the current Intermediate default, static `Start Exam` action, approved comparison bullets, PDF export and corrected report title. Current verification summaries distinguish the latest 69-unit-test run from the historical 101-case full browser run and subsequent focused checks. No tests, deployment or remote Git operations were performed for this documentation-only update.
+
+**Approved comparison copy — 2026-10-14:** Following review of both banks, the user selected reading load, interacting constraints and structured evidence as the three menu comparison points. The Intermediate and Advanced bullets now use the approved paired wording recorded in IMPLEMENTATION_SPEC.md. TypeScript, production build and 7 focused Chromium cases pass, checking both levels at all six required layouts, keyboard/focus/overflow and touch start. Mobile/desktop screenshots for both levels were inspected: `screenshots/default-intermediate-{390,1366}.png` and `screenshots/difficulty-comparison-advanced-{390,1366}.png`. Logs are `test-results/difficulty-comparison-{typecheck,build,browser}.txt`. This copy-only update did not rerun unit tests or deploy; earlier verification remains historical.
+
+**Selector button copy — 2026-10-14:** The difficulty selector uses the static primary label `Start Exam` for both levels. The saving state still reads `Starting exam…`; selected-bank validation and Intermediate default behavior are preserved. Browser locators now use the static label independently of the chosen difficulty. TypeScript, production build and all 18 difficulty Chromium cases pass, covering six required layouts, keyboard/focus/touch, both real banks, replacement, expiry, retries and response races. Refreshed `screenshots/default-intermediate-*.png` show the new label; mobile/desktop images were visually inspected. Logs are `test-results/start-exam-label-{typecheck,build,browser}.txt`. This copy-only update did not rerun unit tests or deploy.
+
+**Default selection update — 2026-10-14:** Every new-attempt difficulty dialog now opens with Intermediate selected. This covers Start exam, Start another exam and Results Start new attempt, and resets to Intermediate after cancelling an Advanced choice. Advanced remains selectable; existing attempts and both reviewed banks retain their original data. The Source courses drawer retains its existing initial selection. Browser tests that require Advanced now choose it explicitly. TypeScript, all 69 unit tests across 9 files, the production build and all 34 targeted Chromium cases across difficulty, Start and foundation suites pass. Coverage includes all six required selector layouts, keyboard/focus/touch, both real banks, replacement, expiry, retries, independent failures and response races. Screenshots `screenshots/default-intermediate-{320,390,768,1366,landscape,enlarged}.png` capture the new default; mobile, desktop, landscape and enlarged images were visually inspected. Evidence is `test-results/default-intermediate-{typecheck,unit-tests,build,browser}.txt`. Both bank hashes remain unchanged. This targeted run does not supersede earlier full-suite browser evidence. No deployment occurred.
+
 BUG-007 is fixed locally on **2026-10-14**: Intermediate Results and PDF reports display `Independent PCAO-F Practice — Intermediate` instead of the original bank's `— Easy` title. A shared presentation helper uses saved difficulty metadata; the reviewed banks and frozen snapshots remain unchanged. Advanced, legacy and custom titles retain their original text. TypeScript, all 69 unit tests across 9 files and the production build pass. All six report layouts pass (320, 390, 768, 1366, landscape and enlarged text), including keyboard opening, heading focus and overflow checks. Mobile/desktop screenshots `screenshots/bug-007-report-title-{390,1366}.png` were visually inspected. Actual Intermediate PDF content and touch export pass. Verification logs are `test-results/bug-007-{typecheck,unit-tests,build,browser}.txt`; the Advanced PDF case initially exceeded its 30-second timeout, then passed with a 120-second limit (30.2 seconds) in `test-results/bug-007-pdf-rerun.txt`. All 9 targeted browser cases pass across the main run and focused rerun. This targeted verification does not replace the earlier full-suite evidence. No deployment occurred for BUG-007.
 
 The complete approved flow is implemented:
@@ -50,14 +58,15 @@ Reopening an expired saved attempt → Shared finalization → Results
 | Timed Exam | Implemented |
 | Review grid and submission confirmation | Implemented |
 | Results overview, domains, filters, and question reviews | Implemented |
+| PDF report export and Intermediate report title | Implemented; verified by the focused runs described above |
 | Persistence and frozen snapshots | Implemented |
 | Exact-set grading and idempotent submission | Implemented |
 | Responsive, keyboard, and touch behavior | Verified in Chromium at the recorded sizes |
 | TypeScript | Passed |
-| Unit tests | 55 passed across 8 files |
-| Browser tests | 101 Chromium cases passed in one final full run across 9 files |
+| Unit tests | Latest recorded run: 69 passed across 9 files |
+| Browser tests | Last full run: 101 Chromium cases across 9 files on 2026-10-13; later checks are focused runs described above |
 | Production build | Passed; generated output in `dist/` |
-| Difficulty selection | Both levels available; Advanced defaults, Intermediate loads the supplied Easy bank |
+| Difficulty selection | Both levels available; Intermediate defaults and loads the supplied Easy bank |
 | Intermediate integration | Complete; real starts, snapshots, grading, reports and courses verified |
 | Publishing | Not performed |
 
@@ -377,7 +386,7 @@ Storage failures, damaged indexes, replacement rollback, and retry behavior have
 
 ## 11. Testing and verification
 
-### Latest Intermediate integration verification
+### Historical Intermediate integration verification — 2026-10-13
 
 | Check | Result | Evidence |
 | --- | --- | --- |
@@ -434,7 +443,7 @@ The suite covers Start → Exam → Review → Results, refresh recovery, deadli
 | Difficulty selection | 53 passed | 95 passed in one final full run | TypeScript/build; dialog, selected bank/difficulty, legacy recovery, layouts and corrected synchronization waits |
 | Intermediate integration | 55 passed | 101 passed in one final full run | TypeScript/build; both real banks, independent availability, snapshots, replacement, sources and retries |
 
-These are successive suite totals, not numbers to add together. Supplementary reruns repeat covered cases. Current 55/101 coverage supersedes the earlier 53/95, 46/83, 35/74 and 35/60 snapshots; the QA-fix full run had one outdated touch navigation expectation, corrected and passed on a focused rerun.
+These are successive suite totals, not numbers to add together. Supplementary reruns repeat covered cases. The Intermediate-integration 55/101 snapshot superseded the earlier 53/95, 46/83, 35/74 and 35/60 snapshots; later unit and focused browser results are recorded in Current status above; the QA-fix full run had one outdated touch navigation expectation, corrected and passed on a focused rerun.
 
 Earlier reports reference `test-results/exam-checks.txt` and `test-results/review-checks.txt`; those raw logs are absent from the current output directory. Historical reports remain. The retained `results-checks.txt` preserves the earlier clean 60-case full run. Previous QA-fix results and the corrected touch rerun are retained in `qa-audit-fix-checks.txt`.
 

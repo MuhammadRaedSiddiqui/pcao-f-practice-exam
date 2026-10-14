@@ -99,7 +99,8 @@ test('source drawer handles pending and unavailable bank with retry', async ({ p
 test('insufficient multiple selections remain unanswered after refresh and grade incorrect on deliberate submission', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await page.getByRole('button', { name: 'Review & submit' }).click();
   await page.getByRole('button', { name: /^Question 4:/ }).click();
   await page.getByRole('checkbox').first().check();
@@ -179,7 +180,8 @@ test('touch source drawer preserves an unfinished attempt and original deadline'
   const page = await context.newPage();
   await page.goto(test.info().project.use.baseURL!);
   await page.getByRole('button', { name: 'Start exam', exact: true }).tap();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).tap();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).tap();
   await page.getByRole('radio').first().check();
   await page.getByRole('button', { name: 'Attempt history', exact: true }).tap();
   await page.getByRole('button', { name: 'Go to attempt history' }).tap();

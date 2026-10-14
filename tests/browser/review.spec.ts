@@ -30,7 +30,8 @@ async function countWrites(page: Page) {
 test('review counts independent flags, traps focus, jumps including current, and restores unchanged answers', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await page.getByRole('radio').first().check();
   await page.getByRole('button', { name: 'Flag for review' }).click();
   await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
@@ -82,7 +83,8 @@ test('review counts independent flags, traps focus, jumps including current, and
 test('cancelled confirmation preserves selections; confirmed double clicks save blanks, partials, score and one report', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await jump(page, 4);
   await page.getByRole('checkbox').first().check();
   await page.getByRole('button', { name: 'Flag for review' }).click();
@@ -130,7 +132,8 @@ for (const trigger of ['interval', 'manual overlap']) {
     await installPausedClock(page, instant);
     await page.goto('/');
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+    await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+    await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
     await page.getByRole('radio').first().check();
     const before = await stored(page);
     await page.getByRole('button', { name: 'Review & submit' }).click();
@@ -164,7 +167,8 @@ for (const trigger of ['interval', 'manual overlap']) {
 test('submission save failure stays in confirmation, reports the error, and permits retry', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   const before = await stored(page);
   await page.getByRole('button', { name: 'Review & submit' }).click();
@@ -199,7 +203,8 @@ for (const viewport of [
     await page.goto('/');
     if (viewport.name === 'enlarged') await page.evaluate(() => { document.body.style.fontSize = '24px'; });
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+    await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+    await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
     await jump(page, 4);
     await page.getByRole('checkbox').first().check();
     await page.getByRole('button', { name: 'Flag for review' }).click();

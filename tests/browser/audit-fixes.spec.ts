@@ -12,7 +12,8 @@ for (const flags of [0, 1, 2]) {
   test('confirmation reminds about answered flagged questions: ' + flags, async ({ page }) => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+    await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+    await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
     // Fill every item to isolate flags from unanswered warnings.
     await page.evaluate(count => {
@@ -50,7 +51,8 @@ for (const viewport of [
     await page.goto('/');
     if (viewport.name === 'enlarged') await page.evaluate(() => { document.body.style.fontSize = '24px'; });
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+    await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+    await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
     await page.getByRole('radio').first().check();
     await page.getByRole('button', { name: 'Flag for review' }).click();
     await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
@@ -91,7 +93,8 @@ for (const viewport of [
 test('refresh warns, cancellation stays in exam, and acceptance recovers the original deadline', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await page.getByRole('radio').first().check();
   const before = await savedAttempt(page);
   const cancelledPrompt = page.waitForEvent('dialog');
@@ -125,7 +128,8 @@ test('browser Back warns before leaving the timed exam', async ({ page }) => {
   await page.goto('/?qa=previous');
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   const before = await savedAttempt(page);
   const prompt = page.waitForEvent('dialog');
@@ -144,7 +148,8 @@ test('expiry closes the leave dialog and finalizes once without warning', async 
   await installPausedClock(page, instant);
   await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await page.getByRole('radio').first().check();
   const before = await savedAttempt(page);
   await page.getByRole('button', { name: 'Attempt history', exact: true }).click();
@@ -166,7 +171,8 @@ for (const elapsed of [92500, 103000]) {
     await installPausedClock(page, instant);
     await page.goto('/');
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+    await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+    await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
     await page.getByRole('button', { name: 'Review & submit' }).click();
     await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
     await page.clock.runFor(elapsed);

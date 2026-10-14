@@ -15,18 +15,18 @@ export const difficultyCatalog: DifficultyCatalog = {
     label: 'Intermediate', bankPath: 'easy-question-bank.json', available: true,
     comparison: 'Compared with Advanced',
     details: [
-      'More direct application of individual concepts.',
-      'More focused scenarios with fewer competing constraints.',
-      'Emphasis on identifying a suitable approach.',
+      'Shorter, more focused scenarios.',
+      'Fewer interacting constraints per decision.',
+      'More compact tables and supporting evidence.',
     ],
   },
   advanced: {
     label: 'Advanced', bankPath: 'question-bank.json', available: true,
     comparison: 'Compared with Intermediate',
     details: [
-      'More complex scenarios combining multiple concepts.',
-      'More competing constraints and tradeoffs to evaluate.',
-      'Emphasis on evaluating which approach best fits the scenario.',
+      'Longer scenarios with more details to track.',
+      'More interacting constraints and tradeoffs.',
+      'More detailed tables, records, and supporting evidence.',
     ],
   },
 };

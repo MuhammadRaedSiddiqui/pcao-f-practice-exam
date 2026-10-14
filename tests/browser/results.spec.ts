@@ -101,7 +101,8 @@ test('new validated data powers a fresh full flow while the original report stay
   await item(page, 'T2').locator('summary').click();
   await expect(item(page, 'T2')).not.toContainText('updated T2 content');
   await page.getByRole('button', { name: 'Start new attempt', exact: true }).click();
-  await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+  await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60' })).toBeFocused();
   await expect(page.getByText('Timed attempt · dataset fixture-2')).toBeVisible();
   await page.locator('input[value="C"]').check();
@@ -151,7 +152,8 @@ for (const viewport of [
     await page.goto('/');
     if (viewport.name === 'enlarged') await page.evaluate(() => { document.body.style.fontSize = '24px'; });
     await page.getByRole('button', { name: 'Start exam', exact: true }).click();
-    await page.getByRole('button', { name: 'Start Advanced exam', exact: true }).click();
+    await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
+    await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
     await page.locator('input[value="' + bank.questions[0].correctOptionIds[0] + '"]').check();
     await page.getByRole('button', { name: 'Review & submit' }).click();
     await page.getByRole('button', { name: /^Question 8:/ }).click();
