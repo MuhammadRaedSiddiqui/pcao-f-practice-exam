@@ -17,4 +17,5 @@ playwright*.ts
 # Account server deployment is separate from the frontend
 supabase/
 vite.account-test.config.ts
+vite.analytics-test.config.ts
 .env*

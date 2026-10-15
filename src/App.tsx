@@ -19,6 +19,7 @@ import { AccountPanel, ReportBackupActions } from './ui/AccountPanel';
 import { AccountHeader } from './ui/AccountHeader';
 import { AccountSettingsPage } from './ui/AccountSettingsPage';
 import type { CloudReport } from './domain/cloudReports';
+import { attachAnalyticsEngagement, setAnalyticsContext, trackEvent } from './services/analytics';
 
 type View = 'start' | 'exam' | 'results' | 'settings';
 
@@ -82,6 +83,16 @@ export function App() {
   const previousView = useRef<View>(view);
   const supportsSaving = Boolean(navigator.locks);
   const account = useAccountHistory(browserStorage, history, refreshHistory);
+  const reportAttempt = accountReport?.attempt ?? attempt;
+  useEffect(() => attachAnalyticsEngagement(), []);
+  useEffect(() => {
+    setAnalyticsContext({ view, difficulty: view === 'start' || view === 'settings' ? null : reportAttempt?.difficulty ?? 'original' });
+  }, [view, reportAttempt?.difficulty]);
+  const previousReview = useRef(false);
+  useEffect(() => {
+    if (reviewStage && !previousReview.current) trackEvent('review_opened', { difficulty: attempt?.difficulty ?? 'original' });
+    previousReview.current = reviewStage !== null;
+  }, [reviewStage, attempt?.difficulty]);
   const unfinishedDeadlines = history.filter(saved => saved.status === 'in-progress')
     .map(saved => `${saved.id}:${saved.deadlineAt}`).join('|');
 
@@ -295,6 +306,12 @@ export function App() {
         const foreign = previousAttempts.some(item => item.status === 'in-progress' && remainingMilliseconds(item.deadlineAt) > 0 && !account.canView(item.id));
         if (foreign) return { ok: false, error: 'An unfinished attempt belongs to another account on this device. Sign in to that account or wait for its deadline.' };
         const result = startStoredAttempt(browserStorage, selectedBank.bank, confirmedIds, Date.now(), currentPreparation.difficulty);
+        // Starting can also preserve expired reports; count only transitions made inside this lock.
+        for (const previous of previousAttempts) {
+          if (previous.status !== 'in-progress') continue;
+          const latest = recoverAttempt(browserStorage, previous.id);
+          if (latest.ok && latest.attempt?.status === 'submitted') trackCompletion(latest.attempt);
+        }
         if (result.ok && result.attempt) {
           try { account.bindNewAttempt(result.attempt); }
           catch { account.setNotice('The exam is saved on this device. Automatic backup could not be enabled for it; choose Back up report after completion.'); }
@@ -309,6 +326,7 @@ export function App() {
         return;
       }
       if (!saved.attempt) return;
+      trackEvent('exam_started', { difficulty: saved.attempt.difficulty ?? 'original', attempt_id: saved.attempt.id });
       opened = true;
       updatePreparation(null);
       updateAttempt(saved.attempt);
@@ -327,7 +345,7 @@ export function App() {
       : await storageAction(() => {
         const latest = recoverAttempt(browserStorage, saved.id);
         return latest.ok && latest.attempt?.status === 'in-progress' && remainingMilliseconds(latest.attempt.deadlineAt) === 0
-          ? submitStoredAttempt(browserStorage, saved.id, Date.now(), 'time expired') : latest;
+          ? submitWithAnalytics(saved.id, Date.now(), 'time expired') : latest;
       });
     if (!recovered) return;
     if (!recovered.ok || !recovered.attempt) {
@@ -336,6 +354,9 @@ export function App() {
       return;
     }
     updateAttempt(recovered.attempt);
+    if (recovered.attempt.status === 'in-progress') trackEvent('exam_resumed', {
+      difficulty: recovered.attempt.difficulty ?? 'original', attempt_id: recovered.attempt.id,
+    });
     setView(recovered.attempt.status === 'submitted' ? 'results' : 'exam');
     setMessage('');
     setNow(Date.now());
@@ -399,11 +420,27 @@ export function App() {
     void editAttempt(current => setFlag(current, questionId, !current.flags.includes(questionId)));
   }
 
+  function trackCompletion(saved: Attempt) {
+    if (!account.canView(saved.id)) return;
+    trackEvent('exam_completed', {
+      difficulty: saved.difficulty ?? 'original', attempt_id: saved.id,
+      submission_reason: saved.submissionReason === 'manual' ? 'manual' : 'timeout',
+      elapsed_seconds: Math.max(0, Math.min(saved.submittedAt!, saved.deadlineAt) - saved.startedAt) / 1000,
+    });
+  }
+
+  function submitWithAnalytics(id: string, instant: number, reason: 'manual' | 'time expired') {
+    const previous = recoverAttempt(browserStorage, id);
+    const saved = submitStoredAttempt(browserStorage, id, instant, reason);
+    if (previous.ok && previous.attempt?.status === 'in-progress' && saved.ok && saved.attempt?.status === 'submitted') trackCompletion(saved.attempt);
+    return saved;
+  }
+
   async function finalize(id: string, instant = Date.now(), reason: 'manual' | 'time expired' = 'manual') {
     if (finalizedIds.current.has(id) || finalizingIds.current.has(id)) return;
     const previouslyOpenId = attemptRef.current?.id;
     finalizingIds.current.add(id);
-    const saved = await storageAction(() => submitStoredAttempt(browserStorage, id, Math.max(instant, Date.now()), reason));
+    const saved = await storageAction(() => submitWithAnalytics(id, Math.max(instant, Date.now()), reason));
     finalizingIds.current.delete(id);
     if (!saved) return;
     if (!saved.ok || !saved.attempt) {

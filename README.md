@@ -1,5 +1,7 @@
 # PCAO-F practice
 
+Optional PostHog analytics tracks visitors, signed-in activity, exam actions and estimated active time. Configure the browser project token/host in environment variables; development and production reports are separated with an `environment` event property. Automatic click capture and session recordings are disabled. See [POSTHOG_SETUP.md](POSTHOG_SETUP.md) for dashboard cards, active-time queries, data boundaries and production configuration. Run `npm run test:analytics` for the separate intercepted-SDK Chromium suite.
+
 Optional email/password accounts, without email verification, are implemented locally for completed-report backup, recovery and account/report management. Account settings have a dedicated page; exports are available for individual Results reports as PDF. The linked workspace has Supabase configured and its migration/functions deployed. Signup automatically backs up completed guest browser history; an empty browser starts with empty account history. Sign in and Create account are in the shared header. Other installations keep accounts disabled until configured. See [SUPABASE_SETUP.md](SUPABASE_SETUP.md) and [CLOUD_HISTORY_VERIFICATION.md](CLOUD_HISTORY_VERIFICATION.md). Active exams keep their original browser persistence and deadline.
 
 Password recovery is currently postponed: Forgot password is hidden and sign-in/signup explain that recovery is unavailable. VITE_PASSWORD_RECOVERY_ENABLED defaults to false. Complete SMTP and recovery-flow setup before enabling it in a future build.

@@ -10,12 +10,14 @@
     "test:browser": "playwright test",
     "build": "vite build --configLoader runner",
     "preview": "vite preview --host 127.0.0.1",
-    "test:account": "playwright test --config playwright.account.config.ts"
+    "test:account": "playwright test --config playwright.account.config.ts",
+    "test:analytics": "playwright test --config playwright.analytics.config.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.3",
     "idb": "8.0.4",
     "pdfmake": "0.3.11",
+    "posthog-js": "^1.438.9",
     "react": "latest",
     "react-dom": "latest",
     "react-markdown": "latest",

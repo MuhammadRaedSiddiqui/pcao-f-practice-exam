@@ -5,6 +5,7 @@ import { difficultyLabel } from '../domain/difficulty';
 import { matchesResultFilter, questionOutcome, resultTitle, summarizeResults, type ResultFilter } from '../domain/results';
 import { MarkdownContent } from './MarkdownContent';
 import { Button, Card } from './primitives';
+import { trackEvent } from '../services/analytics';
 
 type Props = {
   attempt: Attempt;
@@ -113,6 +114,7 @@ export function ResultsPage({ attempt, headingRef, canStart, onStart, onHistory 
         link.hidden = true;
         document.body.append(link);
         link.click();
+        trackEvent('pdf_export_succeeded', { difficulty: attempt.difficulty ?? 'original', attempt_id: attempt.id });
       } finally {
         link.remove();
         // Let the browser begin reading the download before releasing its URL.

@@ -9,6 +9,7 @@ import { withBrowserStorageLock } from '../domain/browserStorage';
 import { EMAIL_FORMAT_MESSAGE, validRegistrationEmail } from '../domain/email';
 import { authRequests } from '../services/authRequests';
 import { RECOVERY_UNAVAILABLE_MESSAGE, recoveryErrorMessage } from '../domain/passwordRecovery';
+import { setAnalyticsUser, trackEvent } from '../services/analytics';
 
 export function useAccountHistory(storage: AttemptStorage, history: Attempt[], refreshDevice: () => void) {
   const [client] = useState(accountClient);
@@ -37,11 +38,11 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
 
   useEffect(() => {
     mounted.current = true;
-    if (!client) { return () => { mounted.current = false; }; }
+    if (!client) { setAnalyticsUser(null); return () => { mounted.current = false; }; }
     let eventSeen = false;
     const adopt = (next: Session | null) => {
       const id = next?.user.id ?? null;
-
+      setAnalyticsUser(id);
       if (owner.current !== id) { owner.current = id; epoch.current += 1; }
       setSession(next); if (!current.current.authTransition) setAuthLoading(false);
     };
@@ -55,7 +56,7 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
       if (!mounted.current || eventSeen) return;
       if (failure) setError('The account session could not be restored. Please sign in again.');
       adopt(initial.session);
-    }).catch(() => { if (mounted.current) { setAuthLoading(false); setError('Account access is unavailable.'); } });
+    }).catch(() => { if (mounted.current) { setAnalyticsUser(null); setAuthLoading(false); setError('Account access is unavailable.'); } });
     const signedOutElsewhere = (event: StorageEvent) => {
       if (event.key !== 'pcao-f:account-signout:v1') return;
       const previous = owner.current;
@@ -162,6 +163,7 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
               if (!active(id, version) || disposed) return;
               if (readOwnership(current.current.storage, attempt.id)?.state !== 'eligible') continue;
               await archiveStore.put({ ...job, state: 'backed-up', reportId: saved.report_id, error: undefined });
+              if (active(id, version)) trackEvent('report_backup_succeeded', { difficulty: attempt.difficulty ?? 'original', attempt_id: attempt.id });
               setRows(previous => [saved, ...previous.filter(row => row.report_id !== saved.report_id)]
                 .sort((a, b) => (b.submitted_at! - a.submitted_at!) || b.report_id.localeCompare(a.report_id)));
             } catch (failure) {
@@ -205,7 +207,8 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
       if (failure) throw new ArchiveError(mode === 'signup' ? 'Account creation failed. Check your email and password, or try signing in.' : 'Sign-in failed. Check your email and password.');
       if (!data.session) throw new ArchiveError('Email confirmation is enabled on the project. The project administrator must disable it for immediate signup access.', 'configuration');
       if (!active(data.session.user.id, epoch.current)) return;
-
+      setAnalyticsUser(data.session.user.id);
+      trackEvent(mode === 'signup' ? 'signup_succeeded' : 'login_succeeded', { method: 'email_password' });
       if (mode === 'signup') {
         const id = data.session.user.id;
         const version = epoch.current;
@@ -237,7 +240,8 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
   async function signOut() {
     if (!client) return;
     const id = owner.current;
-
+    if (id) trackEvent('logout_succeeded');
+    setAnalyticsUser(null);
     current.current.authTransition = true; setAuthLoading(true);
     // Invalidate callbacks and hide account data even if remote logout fails offline.
     owner.current = null; epoch.current += 1; setSession(null); setRows([]); setJobs([]); setEnabled(false); setRecovery(false);
