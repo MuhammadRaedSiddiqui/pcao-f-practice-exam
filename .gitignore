@@ -11,3 +11,10 @@ debug.log
 
 # Vercel local project link
 .vercel/
+
+# Account deployment secrets and local Supabase state
+.env
+.env.*
+!.env.example
+supabase/.temp/
+supabase/.branches/

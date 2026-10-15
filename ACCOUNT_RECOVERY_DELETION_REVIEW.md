@@ -1,0 +1,26 @@
+# Account deletion and password recovery review
+
+Date: 2026-10-15. Scope: static review of app, Edge Function, SQL and installed Supabase SDK source, plus inspection of historical hosted evidence. No tests, browser checks, email messages or live account mutations were performed. This is not a new end-to-end pass.
+
+## Findings
+
+1. **Password recovery cannot resume after dismissal (Medium).** src/ui/AccountHeader.tsx:15 opens Choose a new password only when account.recovery changes. closeAuth at line 30 closes it without changing recovery. The recovery link already creates a signed-in session; the header then shows the email instead of Sign in/Forgot password. There is no control to reopen the form. Add a resume-password-update action while recovery is pending.
+2. **Password recovery state is lost on reload (Medium).** src/hooks/useAccountHistory.ts:27 keeps recovery only in React state and enables it only on PASSWORD_RECOVERY at line 52. The installed SDK removes the recovery tokens from the URL after consuming them. A reload restores the stored session through INITIAL_SESSION rather than replaying PASSWORD_RECOVERY, so the password form does not return. Persist pending recovery context for the specific account/session, restore it only with that authenticated session, and clear it after update or sign-out. Never treat an arbitrary URL flag as authentication.
+3. **Expired/invalid recovery-link errors are not surfaced (Medium).** The installed SDK returns URL callback failures through initialization. The app does not handle that initialization result or callback URL error; getSession reads the stored session and does not return the previous callback failure. Users can land on Home without an explanation or a resend action. Show a safe actionable recovery error without exposing URL tokens or raw server text.
+4. **Deletion can leave a non-dismissible busy dialog (Low).** src/ui/AccountPanel.tsx:100 disables Close/Escape and line 107 disables Cancel during deletion. src/services/accountRepository.ts:16 invokes the function without an explicit timeout or abort boundary. The 30-second authRequests boundary applies to recovery/password requests, not delete-account. A stalled function request can trap the user. Allow dismissal with clear operation status and bound waiting; a timeout/cancel must not claim that an already-sent server deletion was reversed.
+
+## Implemented safeguards
+
+- Deletion requires the UI confirmation checkbox and current password. Server authorization comes from the validated Bearer token, not a client-supplied owner. The backend verifies the password using the authenticated email and checks the returned user ID before admin deletion.
+- account_preferences, attempt_reports and archive_rates reference auth.users with ON DELETE CASCADE. Browser report payloads are never changed during account deletion. Retained owner-bound originals stay private; downloaded cloud copies and account queues are cleared on the normal success path. Unrelated guest records are preserved.
+- Recovery sends resetPasswordForEmail with the current origin plus Vite base path, consumes PASSWORD_RECOVERY and updates the password through the authenticated SDK. The form requires at least eight characters; configured Supabase password policy is the server authority. Requests use the existing cancellable 30-second transport/session-write fence and generic recovery-request success text.
+
+## Evidence and deployment limits
+
+The historical test-results/cloud-history-hosted-integration.json records current-password deletion protection, removal of both temporary accounts and token rejection, with no recorded failure and cleanupComplete=true. This is previous backend evidence, not verification of the newly moved Settings UI. Existing synthetic browser sources cover account deletion, but the mock /recover endpoint simply returns success; they do not establish real recovery-email delivery and password-link completion.
+
+Current hosted SMTP, Auth redirect allowlist and function origin allowlist were not queried. The recorded function allowlist covers localhost/127.0.0.1 on ports 5173, 4173 and 4210; it does not establish support for the current ngrok URL. Local supabase/config.toml lists port 4173 redirects, which is not proof of hosted dashboard configuration. Account deletion from any additional origin needs that origin in ARCHIVE_ALLOWED_ORIGINS. Recovery needs the actual app callback URL in Auth redirects separately.
+
+Supabase's default sender is restricted to project-team addresses; public recovery requires custom SMTP: [official SMTP documentation](https://supabase.com/docs/guides/auth/auth-smtp). Recovery destinations must match the configured allowlist: [official redirect documentation](https://supabase.com/docs/guides/auth/redirect-urls). The two-stage recovery API is documented in [resetPasswordForEmail](https://supabase.com/docs/reference/javascript/auth-resetpasswordforemail).
+
+No implementation changes were made in this review. The four findings and hosted delivery/configuration remain unresolved.

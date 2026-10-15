@@ -14,8 +14,13 @@ import { SourceCoursesDrawer } from './ui/SourceCoursesDrawer';
 import { ResultsPage } from './ui/ResultsPage';
 import { withBrowserStorageLock } from './domain/browserStorage';
 import { DifficultySelectionDialog, type ExamPreparation } from './ui/DifficultySelectionDialog';
+import { useAccountHistory } from './hooks/useAccountHistory';
+import { AccountPanel, ReportBackupActions } from './ui/AccountPanel';
+import { AccountHeader } from './ui/AccountHeader';
+import { AccountSettingsPage } from './ui/AccountSettingsPage';
+import type { CloudReport } from './domain/cloudReports';
 
-type View = 'start' | 'exam' | 'results';
+type View = 'start' | 'exam' | 'results' | 'settings';
 
 // Storage access itself can throw; domain helpers catch these failures.
 const browserStorage: AttemptStorage = {
@@ -50,6 +55,7 @@ export function App() {
   const [coursesOpen, setCoursesOpen] = useState(false);
   const [coursesDifficulty, setCoursesDifficulty] = useState<Difficulty>('advanced');
   const [history, setHistory] = useState<Attempt[]>([]);
+  const [accountReport, setAccountReport] = useState<{ userId: string; attempt: Attempt } | null>(null);
   const [historyErrors, setHistoryErrors] = useState<string[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [preparation, setPreparation] = useState<ExamPreparation | null>(null);
@@ -62,6 +68,8 @@ export function App() {
   const [view, setView] = useState<View>('start');
   const [reviewStage, setReviewStage] = useState<'review' | 'confirm' | null>(null);
   const [leavingExam, setLeavingExam] = useState(false);
+  const [leaveDestination, setLeaveDestination] = useState<'start' | 'settings'>('start');
+  const [keepAccountCopy, setKeepAccountCopy] = useState(false);
   const jumpFocus = useRef(false);
   const finalizedIds = useRef(new Set<string>());
   const finalizingIds = useRef(new Set<string>());
@@ -69,7 +77,11 @@ export function App() {
   const [message, setMessage] = useState('');
   const questionHeading = useRef<HTMLHeadingElement>(null);
   const resultsHeading = useRef<HTMLHeadingElement>(null);
+  const settingsHeading = useRef<HTMLHeadingElement>(null);
+  const startHeading = useRef<HTMLHeadingElement>(null);
+  const previousView = useRef<View>(view);
   const supportsSaving = Boolean(navigator.locks);
+  const account = useAccountHistory(browserStorage, history, refreshHistory);
   const unfinishedDeadlines = history.filter(saved => saved.status === 'in-progress')
     .map(saved => `${saved.id}:${saved.deadlineAt}`).join('|');
 
@@ -104,6 +116,7 @@ export function App() {
   }
 
   function updateAttempt(next: Attempt | null) {
+    setAccountReport(null);
     attemptRef.current = next;
     displayAttempt(next);
   }
@@ -129,6 +142,7 @@ export function App() {
     refreshHistory();
     const current = attemptRef.current;
     if (!current) return;
+    if (!account.canView(current.id)) { updateAttempt(null); setView('start'); return; }
     const recovered = recoverAttempt(browserStorage, current.id);
     if (!recovered.ok) { setMessage(recovered.error); return; }
     if (!recovered.attempt) {
@@ -217,7 +231,13 @@ export function App() {
       window.scrollTo({ top: 0, behavior: 'instant' });
     }
     if (view === 'results') resultsHeading.current?.focus({ preventScroll: true });
-  }, [view, attempt?.currentQuestionId]);
+    if (view === 'settings') {
+      settingsHeading.current?.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+    }
+    if (view === 'start' && previousView.current === 'settings') startHeading.current?.focus({ preventScroll: true });
+    previousView.current = view;
+  }, [view, attempt?.currentQuestionId, accountReport?.attempt.id]);
 
   useEffect(() => {
     if (!reviewStage && jumpFocus.current && view === 'exam') {
@@ -269,8 +289,18 @@ export function App() {
     setStartPending(true);
     let opened = false;
     try {
-      const saved = await storageAction<StartRecovery | null>(() => preparationRef.current === currentPreparation
-        ? startStoredAttempt(browserStorage, selectedBank.bank, confirmedIds, Date.now(), currentPreparation.difficulty) : null);
+      const saved = await storageAction<StartRecovery | null>(() => {
+        if (preparationRef.current !== currentPreparation) return null;
+        const previousAttempts = listAttempts(browserStorage).attempts;
+        const foreign = previousAttempts.some(item => item.status === 'in-progress' && remainingMilliseconds(item.deadlineAt) > 0 && !account.canView(item.id));
+        if (foreign) return { ok: false, error: 'An unfinished attempt belongs to another account on this device. Sign in to that account or wait for its deadline.' };
+        const result = startStoredAttempt(browserStorage, selectedBank.bank, confirmedIds, Date.now(), currentPreparation.difficulty);
+        if (result.ok && result.attempt) {
+          try { account.bindNewAttempt(result.attempt); }
+          catch { account.setNotice('The exam is saved on this device. Automatic backup could not be enabled for it; choose Back up report after completion.'); }
+        }
+        return result;
+      });
       if (!saved) return;
       if (!saved.ok) {
         if ('unfinishedAttempts' in saved) { updatePreparation({ ...currentPreparation, unfinished: saved.unfinishedAttempts }); setMessage(''); }
@@ -291,6 +321,7 @@ export function App() {
   }
 
   async function openSaved(saved: Attempt) {
+    if (!account.canView(saved.id)) { setMessage('Sign in to the account that owns this device report.'); return; }
     // Read-only reports remain available even if coordinated saving is unavailable.
     const recovered = saved.status === 'submitted' ? recoverAttempt(browserStorage, saved.id)
       : await storageAction(() => {
@@ -312,9 +343,28 @@ export function App() {
     window.scrollTo(0, 0);
   }
 
+  async function openAccountReport(row: CloudReport, keep: boolean) {
+    const payload = await account.download(row, keep);
+    if (account.currentOwner() !== row.user_id) return;
+    updateAttempt(null);
+    setAccountReport({ userId: row.user_id, attempt: payload });
+    setView('results'); setMessage('');
+    window.scrollTo(0, 0);
+  }
+
+  useEffect(() => {
+    setKeepAccountCopy(false);
+    if (!account.userId && view === 'settings') setView('start');
+    if (accountReport && accountReport.userId !== account.userId) { setAccountReport(null); setView('start'); }
+    const current = attemptRef.current;
+    if (current && !account.canView(current.id)) {
+      updateAttempt(null); setReviewStage(null); setLeavingExam(false); updatePreparation(null); setView('start');
+    }
+  }, [account.userId]);
+
   function canEdit(): boolean {
     const current = attemptRef.current;
-    if (!current || current.status !== 'in-progress') return false;
+    if (!current || current.status !== 'in-progress' || !account.canView(current.id)) return false;
     if (remainingMilliseconds(current.deadlineAt) === 0) {
       void finalize(current.id, Date.now(), 'time expired');
       return false;
@@ -361,6 +411,7 @@ export function App() {
       return;
     }
     finalizedIds.current.add(id);
+    if (!account.canView(id)) { refreshHistory(); return; }
     // A queued expiry must not take the user out of a newer attempt opened meanwhile.
     if (attemptRef.current && attemptRef.current.id !== id && attemptRef.current.id !== previouslyOpenId) {
       refreshHistory();
@@ -377,27 +428,33 @@ export function App() {
     window.scrollTo(0, 0);
   }
 
-  function showHistory() {
+  function showAccountPage(destination: 'start' | 'settings') {
     setReviewStage(null);
     setLeavingExam(false);
-    setView('start');
+    setView(destination === 'settings' && account.userId ? 'settings' : 'start');
     window.scrollTo(0, 0);
   }
 
-  function requestHistory() {
+  function showHistory() { showAccountPage('start'); }
+
+  function requestAccountPage(destination: 'start' | 'settings') {
     if (view === 'exam' && attempt?.status === 'in-progress') {
-      if (canEdit()) setLeavingExam(true);
+      if (canEdit()) { setLeaveDestination(destination); setLeavingExam(true); }
       return;
     }
-    showHistory();
+    showAccountPage(destination);
   }
+
+  function requestHistory() { requestAccountPage('start'); }
 
   function submit() {
     if (attempt && reviewStage === 'confirm') finalize(attempt.id);
   }
 
-  const unfinished = history.filter(saved => saved.status === 'in-progress');
-  const reports = history.filter(saved => saved.status === 'submitted');
+  const visibleHistory = history.filter(saved => account.canView(saved.id));
+  const unfinished = visibleHistory.filter(saved => saved.status === 'in-progress');
+  const reports = visibleHistory.filter(saved => saved.status === 'submitted');
+  const displayedReport = accountReport?.attempt ?? attempt;
   const canStart = supportsSaving && hasReadyBank && !historyLoading && historyErrors.length === 0;
   const questions = attempt?.snapshot.questions ?? [];
   const questionIndex = attempt ? Math.max(0, questions.findIndex(q => q.id === attempt.currentQuestionId)) : 0;
@@ -411,7 +468,11 @@ export function App() {
       <Container>
         <div className="site-header__inner">
           <div className="brand"><span className="brand__mark" aria-hidden="true">P</span><span>PCAO-F <span className="brand__suffix">practice</span></span></div>
-          {view !== 'start' && <Button variant="quiet" onClick={requestHistory}>Attempt history</Button>}
+          <div className="site-header__actions">
+            {view !== 'start' && <Button variant="quiet" onClick={requestHistory}>Attempt history</Button>}
+            {account.userId && <Button variant="quiet" aria-current={view === 'settings' ? 'page' : undefined} onClick={() => requestAccountPage('settings')}>Account settings</Button>}
+            <AccountHeader account={account} />
+          </div>
         </div>
       </Container>
     </header>
@@ -431,7 +492,7 @@ export function App() {
         {message && !preparation && <div className="validation-message app-message" role="alert">{message}</div>}
         {view === 'start' && <>
           <p className="eyebrow">Independent practice</p>
-          <h1>Independent PCAO-F Practice</h1>
+          <h1 ref={startHeading} tabIndex={-1}>Independent PCAO-F Practice</h1>
           <p className="lead">Independently prepared practice questions to help you prepare for PCAO-F. This is not an official certification exam.</p>
           <Button className="source-courses-button" aria-haspopup="dialog" aria-expanded={coursesOpen} onClick={() => { setCoursesDifficulty('advanced'); setCoursesOpen(true); }}>Source courses</Button>
           <SourceCoursesDrawer open={coursesOpen} difficulty={coursesDifficulty} bankState={bankStates[coursesDifficulty]} onClose={() => setCoursesOpen(false)}
@@ -474,10 +535,10 @@ export function App() {
           </Card>
           <section className="history-section" aria-labelledby="history-title">
             <h2 id="history-title">Your attempts</h2>
-            <p className="muted">History is saved on this device/browser. It is not synced to other devices.</p>
+            <p className="muted">{account.available ? 'Device history stays in this browser. Create an account to automatically back up completed reports across devices.' : 'History is saved on this device/browser. It is not synced to other devices.'}</p>
             {historyLoading ? <Card><p role="status">Loading your saved attempts…</p></Card> : <>
               {historyErrors.length > 0 && <div className="validation-message" role="alert"><p>Some saved attempts could not be read. Check that browser storage is available, then try again.</p><p>New exams are paused to protect unfinished attempts.</p><Button onClick={refreshHistory}>Retry saved attempts</Button></div>}
-              {history.length === 0 && historyErrors.length === 0 && <Card className="history-empty"><p className="muted">No attempts yet. Complete an exam to see your score and report here.</p></Card>}
+              {visibleHistory.length === 0 && historyErrors.length === 0 && <Card className="history-empty"><p className="muted">No attempts yet. Complete an exam to see your score and report here.</p></Card>}
               <div className="history-list">
                 {unfinished.map(saved => <Card key={saved.id} className="history-row">
                   <div className="history-row__text"><strong>Unfinished attempt</strong><span>{difficultyLabel(saved.difficulty)} · Started {dateTime(saved.startedAt)} · Dataset {saved.datasetVersion}</span><span>Deadline {dateTime(saved.deadlineAt)}</span></div>
@@ -489,11 +550,13 @@ export function App() {
                   return <Card key={saved.id} className="history-row">
                     <div className="history-row__text"><strong>Completed {dateTime(saved.submittedAt!)}</strong><span>{difficultyLabel(saved.difficulty)} · Practice score {practice.practiceScore} / 1000 · {result.correct} / {result.total} correct · Dataset {saved.datasetVersion}</span><span className={'practice-status practice-status--' + (practice.passed ? 'passed' : 'failed')}>{practice.passed ? 'Passed' : 'Failed'}</span></div>
                     <Button onClick={() => openSaved(saved)}>Open report</Button>
+                    {account.available && <ReportBackupActions account={account} attempt={saved} />}
                   </Card>;
                 })}
               </div>
             </>}
           </section>
+          <AccountPanel key={account.userId ?? 'guest'} account={account} history={history} showHistory keepCopy={keepAccountCopy} onKeepCopyChange={setKeepAccountCopy} onOpenReport={openAccountReport} />
           <p className="footnote">Practice score uses equal-weight question scoring; it is not an official certification score.</p>
         </>}
 
@@ -534,8 +597,8 @@ export function App() {
             <Button variant="primary" onClick={() => { if (canEdit()) setReviewStage('review'); }}>Review &amp; submit</Button>
           </nav>
           {leavingExam && <Dialog open title="Leave exam?" onClose={() => setLeavingExam(false)}
-            actions={<><Button onClick={() => setLeavingExam(false)}>Stay in exam</Button><Button variant="primary" onClick={() => { if (canEdit()) showHistory(); }}>Go to attempt history</Button></>}>
-            <p>Your timer will keep running while you view attempt history. Your answers and flags are saved, and you can resume with the original deadline.</p>
+            actions={<><Button onClick={() => setLeavingExam(false)}>Stay in exam</Button><Button variant="primary" onClick={() => { if (canEdit()) showAccountPage(leaveDestination); }}>{leaveDestination === 'settings' ? 'Go to account settings' : 'Go to attempt history'}</Button></>}>
+            <p>Your timer will keep running while you view {leaveDestination === 'settings' ? 'account settings' : 'attempt history'}. Your answers and flags are saved, and you can resume with the original deadline.</p>
             <p className="review-time" role="timer" aria-live="off" aria-label="Time remaining">Time remaining: <strong>{clock(remainingMilliseconds(attempt.deadlineAt, now))}</strong></p>
           </Dialog>}
           <ReviewSubmitDialog attempt={attempt} stage={reviewStage}
@@ -549,9 +612,14 @@ export function App() {
             onSubmit={submit} onNavigate={navigate} />
         </>}
 
-        {view === 'results' && attempt?.status === 'submitted' && <ResultsPage key={attempt.id}
-          attempt={attempt} headingRef={resultsHeading} canStart={canStart} onStart={openDifficulty}
-          onHistory={showHistory} />}
+        {view === 'settings' && account.userId && <AccountSettingsPage key={account.userId}
+          account={account} history={history} keepCopy={keepAccountCopy} onKeepCopyChange={setKeepAccountCopy}
+          onOpenReport={openAccountReport} onBack={showHistory} headingRef={settingsHeading} />}
+
+        {view === 'results' && displayedReport?.status === 'submitted' && <>
+          <ResultsPage key={displayedReport.id} attempt={displayedReport} headingRef={resultsHeading} canStart={canStart} onStart={openDifficulty} onHistory={showHistory} />
+          {!accountReport && account.available && <ReportBackupActions account={account} attempt={displayedReport} />}
+        </>}
         <DifficultySelectionDialog preparation={preparation} bankState={bankStates[preparation?.difficulty ?? 'intermediate']}
           busy={startPending} canSave={supportsSaving && !historyLoading && historyErrors.length === 0}
           hasUnfinished={unfinished.length > 0} message={message}

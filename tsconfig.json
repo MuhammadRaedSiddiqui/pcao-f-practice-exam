@@ -19,12 +19,13 @@
     "types": [
       "vite/client",
       "node"
-    ]
+    ],
+    "allowImportingTsExtensions": true
   },
   "include": [
     "src",
     "tests",
-    "vite.config.ts",
-    "playwright.config.ts"
+    "vite*.config.ts",
+    "playwright*.config.ts"
   ]
 }

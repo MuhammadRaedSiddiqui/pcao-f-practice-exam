@@ -332,3 +332,31 @@ h2 { margin: 0; font-size: clamp(21px, 2.5vw, 25px); line-height: 1.2; letter-sp
   .dialog--drawer { width: 100%; border-radius: 0; }
   .result-cards { grid-template-columns: 1fr; }
 }
+
+/* Optional account history */
+.account-section { margin: 1.5rem 0; }
+.account-card h2, .account-history h2 { font-size: 1.2rem; margin: 0 0 .8rem; }
+.account-email, .account-check span { overflow-wrap: anywhere; min-width: 0; }
+.account-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+.account-form { display: grid; gap: 1rem; }
+.account-form > label:not(.account-check) { display: grid; gap: .45rem; font-weight: 600; }
+.account-form input:not([type="checkbox"]) { width: 100%; min-height: 44px; padding: .7rem; border: 1px solid #a3b6b5; border-radius: .5rem; font: inherit; }
+.account-check { display: flex; gap: .65rem; align-items: center; min-height: 44px; padding: .35rem 0; }
+.account-check input { width: 20px; height: 20px; flex: 0 0 20px; accent-color: #087f82; }
+.account-form input:focus-visible, .account-check input:focus-visible { outline: 3px solid #087f82; outline-offset: 3px; }
+.account-history { margin-top: 1.5rem; }
+.account-history .history-row { margin-top: .8rem; }
+.report-backup { flex-basis: 100%; width: 100%; border-top: 1px solid #dce5e5; margin-top: .6rem; padding-top: .6rem; }
+.backup-state { font-size: .9rem; font-weight: 600; margin: .2rem 0 .6rem; }
+.history-row:has(.report-backup) { flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .history-row:has(.report-backup) { flex-wrap: nowrap; }
+  .report-backup { flex-basis: auto; }
+}
+@media (max-width: 480px) { .account-actions > .button { max-width: 100%; white-space: normal; } }
+
+/* Header account access */
+.site-header__inner { flex-wrap: wrap; }
+.site-header__actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-left: auto; max-width: 100%; min-width: 0; }
+.header-auth { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; min-width: 0; max-width: 100%; }
+.header-account-email { max-width: 28ch; overflow-wrap: anywhere; text-align: right; color: #526662; font-size: .875rem; }

@@ -9,9 +9,12 @@
     "test": "vitest run --configLoader runner",
     "test:browser": "playwright test",
     "build": "vite build --configLoader runner",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "test:account": "playwright test --config playwright.account.config.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.117.3",
+    "idb": "8.0.4",
     "pdfmake": "0.3.11",
     "react": "latest",
     "react-dom": "latest",
@@ -22,6 +25,7 @@
     "zod": "latest"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.9",
     "@playwright/test": "latest",
     "@types/mdast": "4.0.4",
     "@types/node": "latest",
@@ -29,7 +33,10 @@
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "@vitejs/plugin-react": "latest",
+    "deno": "2.9.6",
+    "fake-indexeddb": "6.2.5",
     "pdfjs-dist": "6.4.299",
+    "supabase": "2.120.0",
     "typescript": "latest",
     "vite": "latest",
     "vitest": "latest"

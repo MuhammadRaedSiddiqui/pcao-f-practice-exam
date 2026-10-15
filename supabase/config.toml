@@ -1,0 +1,15 @@
+project_id = "pcao-f-practice"
+[auth]
+enabled = true
+minimum_password_length = 8
+site_url = "http://localhost:4173"
+additional_redirect_urls = ["http://127.0.0.1:4173"]
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+[functions.backup-report]
+verify_jwt = true
+[functions.delete-report]
+verify_jwt = true
+[functions.delete-account]
+verify_jwt = true

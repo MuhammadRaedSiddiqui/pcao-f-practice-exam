@@ -1,0 +1,3 @@
+// Synthetic email syntax fixtures; no delivery or ownership claims.
+export const validEmails = ['sam@example.com', 'a.b+tag@example.co.uk', "o'hara@example.org", 'A@example.COM', 'a@xn--bcher-kva.example', 'a@example.xn--p1ai', 'a@sub-2.example.com', 'a'.repeat(64)+'@example.com'];
+export const invalidEmails = ['a@b', 'a@localhost', 'a@example', 'a@b.c', 'a@b.123', 'a@127.0.0.1', 'a@-example.com', 'a@example-.com', 'a@example..com', 'a@example.com.', '.a@example.com', 'a.@example.com', 'a..b@example.com', 'a b@example.com', 'a@@example.com', 'a@example.com extra', 'a@example.com\n', 'a@exa_mple.com', 'a@'+ 'b'.repeat(64) +'.com', 'a'.repeat(65)+'@example.com', 'a@'+'b'.repeat(63)+'.'+'c'.repeat(63)+'.'+'d'.repeat(63)+'.'+'e'.repeat(63)+'.com', '', ' a@example.com'];

@@ -13,3 +13,8 @@ debug.log
 /question-bank.json
 /question-bank-corrected.json
 playwright*.ts
+
+# Account server deployment is separate from the frontend
+supabase/
+vite.account-test.config.ts
+.env*
