@@ -24,6 +24,10 @@ Auth requests have a 30-second timeout and remain cancellable. Cancellation cann
 
 ## Password recovery email setup (BUG-005)
 
+**Normal recovery enabled — 2026-10-15:** The owner requested committing recovery as part of the normal app. Configured accounts now enable recovery by default; VITE_PASSWORD_RECOVERY_ENABLED=false is an explicit opt-out. The local configuration and example use true. Deploy the recovery frontend to Vercel; if Vercel has an explicit false value, change it to true or remove it before rebuilding. SMTP credentials remain exclusively in Supabase. A real recovery email/reset/login still needs confirmation; no live emails were sent by automated checks. Earlier postponement/feature-gate notes below describe historical decisions.
+
+**Setup resumed 2026-10-15:** Gmail SMTP fields and the production Site URL/redirect were supplied in owner screenshots. Local resume/reload/invalid-link fixes now pass TypeScript, all 42 focused unit checks, all seven synthetic recovery browser checks and the production build after explicit owner approval. Keep the recovery flag off until a controlled real-mailbox delivery/reset/login check; hosted SMTP delivery remains unverified. See [PASSWORD_RECOVERY_RESUME_STATUS.md](PASSWORD_RECOVERY_RESUME_STATUS.md). The earlier postponement and setup notes below are historical.
+
 **Postponed by the owner on 2026-10-15.** VITE_PASSWORD_RECOVERY_ENABLED defaults to false when absent. The app hides Forgot password and shows an unavailable notice in sign-in/signup. Recovery requests, password-update handlers and the recovery dialog are gated off while disabled; signup/sign-in remain available. This is an app feature gate, not a change to the hosted Supabase Auth APIs.
 
 Keep the flag absent or false in Vercel and local configuration for now. A rebuild/redeployment is required to apply the local UI change to the deployed site. Later, complete the setup and remaining recovery-flow work below, verify the full flow when authorized, then set VITE_PASSWORD_RECOVERY_ENABLED=true in the relevant build environment and rebuild/redeploy. Do not enable it solely because SMTP credentials were entered.
@@ -47,14 +51,14 @@ Copy .env.example to .env.local and set:
 
 ~~~dotenv
 VITE_ACCOUNT_HISTORY_ENABLED=true
-VITE_PASSWORD_RECOVERY_ENABLED=false
+VITE_PASSWORD_RECOVERY_ENABLED=true
 VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLIC_PUBLISHABLE_KEY
 ~~~
 
 Use only the publishable key (or legacy anon key). Privileged keys belong only in the server environment. .env.local is ignored by Git and excluded from frontend deployment uploads.
 
-For Vercel, set the account URL/key/enable variables in the relevant project environments and rebuild/redeploy. Keep VITE_PASSWORD_RECOVERY_ENABLED absent or false while recovery is postponed. Vite reads them at build time. Missing, invalid or disabled configuration keeps the account UI hidden and the guest app working.
+For Vercel, set the account URL/key/enable variables in the relevant project environments and rebuild/redeploy. Recovery now defaults on for configured accounts. Set VITE_PASSWORD_RECOVERY_ENABLED=false only to disable it explicitly; remove any old false override or set true when deploying recovery. Vite reads them at build time. Missing, invalid or disabled configuration keeps the account UI hidden and the guest app working.
 
 ## Database and functions
 

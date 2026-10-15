@@ -1,8 +1,11 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { authRequests } from './authRequests';
+import { authCallbackState } from '../domain/recoveryContext';
+import { isPasswordRecoveryEnabled } from '../domain/passwordRecovery';
 
-// Enable only after email delivery and the recovery flow are ready.
-export const passwordRecoveryEnabled = import.meta.env.VITE_PASSWORD_RECOVERY_ENABLED === 'true';
+export const initialAuthCallback = authCallbackState(typeof window === 'undefined' ? '' : window.location.href);
+
+export const passwordRecoveryEnabled = isPasswordRecoveryEnabled(import.meta.env.VITE_PASSWORD_RECOVERY_ENABLED);
 
 const sessionKey = 'pcao-f:account-session:v1';
 const rememberKey = 'pcao-f:remember-account:v1';

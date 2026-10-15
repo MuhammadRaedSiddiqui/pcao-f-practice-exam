@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { accountClient, rememberAccount, clearAccountSession, passwordRecoveryEnabled } from '../services/supabaseClient';
+import { accountClient, rememberAccount, clearAccountSession, passwordRecoveryEnabled, initialAuthCallback } from '../services/supabaseClient';
 import { accountRepository, errorFrom } from '../services/accountRepository';
 import { ArchiveError, HISTORY_PAGE_SIZE, reportHash, retryDelay, parseCloudMetadata, validateCloudPayload, type CloudReport } from '../domain/cloudReports';
 import { archiveKey, archiveStore, claimAttempt, claimGuestReports, pauseAttempt, markDeleted, readOwnership, removeDeviceReport, visibleTo, type ArchiveJob } from '../domain/archiveStorage';
@@ -8,7 +8,8 @@ import { listAttempts, recoverAttempt, type Attempt, type AttemptStorage } from 
 import { withBrowserStorageLock } from '../domain/browserStorage';
 import { EMAIL_FORMAT_MESSAGE, validRegistrationEmail } from '../domain/email';
 import { authRequests } from '../services/authRequests';
-import { RECOVERY_UNAVAILABLE_MESSAGE, recoveryErrorMessage } from '../domain/passwordRecovery';
+import { RECOVERY_UNAVAILABLE_MESSAGE, RECOVERY_LINK_ERROR, recoveryErrorMessage } from '../domain/passwordRecovery';
+import { createRecoveryContext, cleanAuthCallbackUrl } from '../domain/recoveryContext';
 import { setAnalyticsUser, trackEvent } from '../services/analytics';
 
 export function useAccountHistory(storage: AttemptStorage, history: Attempt[], refreshDevice: () => void) {
@@ -26,6 +27,8 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
   const [backingUp, setBackingUp] = useState<string | null>(null);
   const [syncTick, setSyncTick] = useState(0);
   const [recovery, setRecovery] = useState(false);
+  const [recoveryError, setRecoveryError] = useState('');
+  const [recoveryContext] = useState(() => createRecoveryContext(() => window.sessionStorage));
   const owner = useRef<string | null>(null);
   const epoch = useRef(0);
   const mounted = useRef(false);
@@ -42,6 +45,8 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
     let eventSeen = false;
     const adopt = (next: Session | null) => {
       const id = next?.user.id ?? null;
+      if (!passwordRecoveryEnabled) recoveryContext.clear();
+      setRecovery(passwordRecoveryEnabled && recoveryContext.matches(next));
       setAnalyticsUser(id);
       if (owner.current !== id) { owner.current = id; epoch.current += 1; }
       setSession(next); if (!current.current.authTransition) setAuthLoading(false);
@@ -49,8 +54,20 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
     const { data } = client.auth.onAuthStateChange((event, next) => {
       if (next && !authRequests.acceptSession()) return;
       eventSeen = true;
+      if (event === 'PASSWORD_RECOVERY' && passwordRecoveryEnabled && next) {
+        if (!recoveryContext.begin(next)) setRecoveryError(RECOVERY_LINK_ERROR);
+      }
       adopt(next);
-      if (event === 'PASSWORD_RECOVERY' && passwordRecoveryEnabled) setRecovery(true);
+    });
+    void client.auth.initialize().then(({ error: failure }) => {
+      if (!mounted.current || !initialAuthCallback.present) return;
+      if (passwordRecoveryEnabled && (failure || initialAuthCallback.failed)) {
+        recoveryContext.clear(); setRecovery(false); setRecoveryError(RECOVERY_LINK_ERROR);
+      }
+      // Never display raw provider descriptions or retain callback credentials.
+      try { window.history.replaceState(window.history.state, '', cleanAuthCallbackUrl(window.location.href)); } catch { /* Recovery errors remain visible. */ }
+    }).catch(() => {
+      if (mounted.current && passwordRecoveryEnabled && initialAuthCallback.present) setRecoveryError(RECOVERY_LINK_ERROR);
     });
     void client.auth.getSession().then(({ data: initial, error: failure }) => {
       if (!mounted.current || eventSeen) return;
@@ -60,6 +77,7 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
     const signedOutElsewhere = (event: StorageEvent) => {
       if (event.key !== 'pcao-f:account-signout:v1') return;
       const previous = owner.current;
+      recoveryContext.clear();
       clearAccountSession(); client.auth.stopAutoRefresh(); adopt(null); setRecovery(false);
       if (previous) void archiveStore.clearOwner(previous).catch(() => {});
     };
@@ -207,6 +225,7 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
       if (failure) throw new ArchiveError(mode === 'signup' ? 'Account creation failed. Check your email and password, or try signing in.' : 'Sign-in failed. Check your email and password.');
       if (!data.session) throw new ArchiveError('Email confirmation is enabled on the project. The project administrator must disable it for immediate signup access.', 'configuration');
       if (!active(data.session.user.id, epoch.current)) return;
+      recoveryContext.clear(); setRecovery(false); setRecoveryError('');
       setAnalyticsUser(data.session.user.id);
       trackEvent(mode === 'signup' ? 'signup_succeeded' : 'login_succeeded', { method: 'email_password' });
       if (mode === 'signup') {
@@ -242,6 +261,7 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
     const id = owner.current;
     if (id) trackEvent('logout_succeeded');
     setAnalyticsUser(null);
+    recoveryContext.clear(); setRecoveryError('');
     current.current.authTransition = true; setAuthLoading(true);
     // Invalidate callbacks and hide account data even if remote logout fails offline.
     owner.current = null; epoch.current += 1; setSession(null); setRows([]); setJobs([]); setEnabled(false); setRecovery(false);
@@ -397,14 +417,27 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
   }
   async function updatePassword(password: string, signal?: AbortSignal) {
     if (!passwordRecoveryEnabled) throw new ArchiveError(RECOVERY_UNAVAILABLE_MESSAGE, 'configuration');
-    if (!client || !recovery) throw new ArchiveError('Open a password recovery link first.', 'auth');
-    const { error: failure } = await authRequests.run(() => client.auth.updateUser({ password }), signal);
+    const id = owner.current; const version = epoch.current;
+    if (!client || !id || !recovery || !recoveryContext.matches(session)) throw new ArchiveError('Open a password recovery link first.', 'auth');
+    if (password.length < 8) throw new ArchiveError('Use at least 8 characters for your new password.', 'invalid');
+    const { error: failure } = await authRequests.run(async () => {
+      const { data, error: sessionError } = await client.auth.getSession();
+      signal?.throwIfAborted();
+      if (sessionError || !active(id, version) || !recoveryContext.matches(data.session)) {
+        if (active(id, version)) { recoveryContext.clear(); setRecovery(false); setRecoveryError(RECOVERY_LINK_ERROR); }
+        throw new ArchiveError('Open a fresh password recovery link before updating your password.', 'auth');
+      }
+      return client.auth.updateUser({ password });
+    }, signal);
+    signal?.throwIfAborted();
     if (failure) throw new ArchiveError('The password could not be updated. Please retry.');
+    if (!active(id, version)) throw new ArchiveError('Your account session changed. Sign in again to check your password.', 'auth');
+    recoveryContext.clear(); setRecoveryError('');
     setRecovery(false);
   }
 
   return {
-    available: Boolean(client), session, userId, authLoading, enabled, rows, jobs, loading, more, error, notice, backingUp, recovery, recoveryEnabled: Boolean(client) && passwordRecoveryEnabled,
+    available: Boolean(client), session, userId, authLoading, enabled, rows, jobs, loading, more, error, notice, backingUp, recovery, recoveryError, setRecoveryError, recoveryEnabled: Boolean(client) && passwordRecoveryEnabled,
     authenticate, signOut, setAutomatic, bindNewAttempt, backUpReport, retry, cancelBackup, download, deleteReport, removeDevice, deleteAccount,
     requestRecovery, updatePassword, loadMore, setError, setNotice,
     canView: (attemptId: string) => visibleTo(storage, attemptId, owner.current),

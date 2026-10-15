@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { RECOVERY_REQUESTED_MESSAGE, recoveryErrorMessage } from '../src/domain/passwordRecovery';
+import { RECOVERY_REQUESTED_MESSAGE, recoveryErrorMessage, isPasswordRecoveryEnabled } from '../src/domain/passwordRecovery';
+
+describe('password recovery availability', () => {
+  it.each([undefined, '', 'true'])('enables ordinary account recovery for %s', value => {
+    expect(isPasswordRecoveryEnabled(value)).toBe(true);
+  });
+  it('retains an explicit opt-out', () => {
+    expect(isPasswordRecoveryEnabled('false')).toBe(false);
+  });
+});
 
 describe('password recovery error messages', () => {
   it('explains restricted default-sender delivery with a support reference', () => {

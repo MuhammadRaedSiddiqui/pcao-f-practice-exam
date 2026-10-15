@@ -1,6 +1,11 @@
 type RecoveryFailure = { code?: unknown; status?: unknown; name?: unknown };
 
+// Recovery is part of configured accounts; an explicit false remains an opt-out.
+export function isPasswordRecoveryEnabled(value: string | undefined): boolean { return value !== 'false'; }
+
 export const RECOVERY_UNAVAILABLE_MESSAGE = 'Password recovery is currently unavailable. Please keep your password safe.';
+
+export const RECOVERY_LINK_ERROR = 'This password recovery link could not be opened. It may have expired or already been used. Request a new recovery link.';
 
 export const RECOVERY_REQUESTED_MESSAGE = 'If an account exists for this email, a password reset link has been requested. Check your inbox and spam folder.';
 

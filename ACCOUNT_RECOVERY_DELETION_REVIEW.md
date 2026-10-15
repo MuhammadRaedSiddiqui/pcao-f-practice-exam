@@ -1,5 +1,7 @@
 # Account deletion and password recovery review
 
+**Update — 2026-10-15:** Password-recovery findings 1–3 below now have local fixes verified by TypeScript, 42 focused unit checks, seven synthetic recovery browser checks and a production build. The deletion-dialog finding remains unchanged. SMTP delivery and a real-mailbox reset/login remain unverified. The owner subsequently requested enabling normal-app recovery: it now defaults on for configured accounts, with an explicit false opt-out. Final verification passes 46 focused units, seven browser cases, TypeScript and build. See [PASSWORD_RECOVERY_RESUME_STATUS.md](PASSWORD_RECOVERY_RESUME_STATUS.md). The original static review below is historical.
+
 Date: 2026-10-15. Scope: static review of app, Edge Function, SQL and installed Supabase SDK source, plus inspection of historical hosted evidence. No tests, browser checks, email messages or live account mutations were performed. This is not a new end-to-end pass.
 
 ## Findings

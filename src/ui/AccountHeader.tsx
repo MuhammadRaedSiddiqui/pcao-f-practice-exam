@@ -14,6 +14,7 @@ export function AccountHeader({ account }: { account: AccountHistory }) {
   const [success, setSuccess] = useState('');
   const pending = useRef<AbortController | null>(null);
   useEffect(() => { if (account.recoveryEnabled && account.recovery) setMode('password'); }, [account.recoveryEnabled, account.recovery]);
+  useEffect(() => { if (!account.recovery && mode === 'password' && !busy) { setMode(null); setPassword(''); } }, [account.recovery, mode, busy]);
   useEffect(() => () => { pending.current?.abort(); pending.current = null; }, []);
   if (!account.available) return null;
 
@@ -35,12 +36,18 @@ export function AccountHeader({ account }: { account: AccountHistory }) {
   const title = mode === 'signup' ? 'Create an account' : mode === 'reset' ? 'Reset your password' : mode === 'password' ? 'Choose a new password' : 'Sign in';
   return <>
     <div className="header-auth" aria-label="Account access">
+      {account.recoveryEnabled && account.recovery && <Button variant="primary" disabled={busy} onClick={() => { setMode('password'); setError(''); setSuccess(''); }}>Finish password reset</Button>}
       {account.authLoading ? <span className="header-account-email" role="status">Loading account…</span> : account.userId ?
         <span className="header-account-email" title={account.session?.user.email} aria-label={'Signed in as ' + account.session?.user.email}>{account.session?.user.email}</span> : <>
           <Button variant="quiet" disabled={busy} onClick={() => { setMode('signin'); setError(''); setSuccess(''); }}>Sign in</Button>
           <Button variant="primary" disabled={busy} onClick={() => { setMode('signup'); setError(''); setSuccess(''); }}>Create account</Button>
         </>}
     </div>
+    {account.recoveryEnabled && account.recoveryError && <div className="header-recovery-notice">
+      <p role="alert">{account.recoveryError}</p>
+      <Button variant="quiet" onClick={() => { setMode('reset'); setPassword(''); setError(''); setSuccess(''); account.setRecoveryError(''); }}>Request a new recovery link</Button>
+    </div>}
+    {!mode && success && <p className="header-recovery-notice" role="status">{success}</p>}
     {mode && <Dialog open title={title} onClose={closeAuth}>
       <form className="account-form" onSubmit={event => {
         event.preventDefault();
@@ -49,7 +56,10 @@ export function AccountHeader({ account }: { account: AccountHistory }) {
             await account.requestRecovery(email, signal); signal.throwIfAborted();
             setSuccess(RECOVERY_REQUESTED_MESSAGE); return;
           }
-          if (mode === 'password') await account.updatePassword(password, signal);
+          if (mode === 'password') {
+            await account.updatePassword(password, signal);
+            signal.throwIfAborted(); setSuccess('Your password has been updated.');
+          }
           else await account.authenticate(mode!, email, password, remember, signal);
           signal.throwIfAborted();
           setPassword('');
