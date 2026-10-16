@@ -3,7 +3,24 @@ import type { AccountHistory } from '../hooks/useAccountHistory';
 import { RECOVERY_REQUESTED_MESSAGE, RECOVERY_UNAVAILABLE_MESSAGE } from '../domain/passwordRecovery';
 import { Button, Dialog } from './primitives';
 
-export function AccountHeader({ account }: { account: AccountHistory }) {
+export function AccountHeader({ account, examActive = false }: { account: AccountHistory; examActive?: boolean }) {
+  if (!account.available) return null;
+  // Unmount the forms during an exam: their cleanup cancels pending requests,
+  // while the account hook keeps the session and pending recovery context alive.
+  if (examActive) return <div className="header-auth" aria-label="Account access">
+    <AccountStatus account={account} />
+    {!account.authLoading && !account.userId && <span className="header-auth-hint">Sign in or create an account after leaving or submitting the exam.</span>}
+  </div>;
+  return <AccountAccess account={account} />;
+}
+
+function AccountStatus({ account }: { account: AccountHistory }) {
+  return account.authLoading ? <span className="header-account-email" role="status">Loading account…</span> : account.userId ?
+    <span className="header-account-email" title={account.session?.user.email} aria-label={'Signed in as ' + account.session?.user.email}>{account.session?.user.email}</span> :
+    <span className="header-account-email">Guest mode</span>;
+}
+
+function AccountAccess({ account }: { account: AccountHistory }) {
   const [mode, setMode] = useState<'signin' | 'signup' | 'reset' | 'password' | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,7 +33,6 @@ export function AccountHeader({ account }: { account: AccountHistory }) {
   useEffect(() => { if (account.recoveryEnabled && account.recovery) setMode('password'); }, [account.recoveryEnabled, account.recovery]);
   useEffect(() => { if (!account.recovery && mode === 'password' && !busy) { setMode(null); setPassword(''); } }, [account.recovery, mode, busy]);
   useEffect(() => () => { pending.current?.abort(); pending.current = null; }, []);
-  if (!account.available) return null;
 
   async function run(action: (signal: AbortSignal) => Promise<unknown>) {
     if (pending.current) return;
@@ -37,8 +53,7 @@ export function AccountHeader({ account }: { account: AccountHistory }) {
   return <>
     <div className="header-auth" aria-label="Account access">
       {account.recoveryEnabled && account.recovery && <Button variant="primary" disabled={busy} onClick={() => { setMode('password'); setError(''); setSuccess(''); }}>Finish password reset</Button>}
-      {account.authLoading ? <span className="header-account-email" role="status">Loading account…</span> : account.userId ?
-        <span className="header-account-email" title={account.session?.user.email} aria-label={'Signed in as ' + account.session?.user.email}>{account.session?.user.email}</span> : <>
+      {account.authLoading || account.userId ? <AccountStatus account={account} /> : <>
           <Button variant="quiet" disabled={busy} onClick={() => { setMode('signin'); setError(''); setSuccess(''); }}>Sign in</Button>
           <Button variant="primary" disabled={busy} onClick={() => { setMode('signup'); setError(''); setSuccess(''); }}>Create account</Button>
         </>}

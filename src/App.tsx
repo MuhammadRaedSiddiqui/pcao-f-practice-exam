@@ -532,6 +532,7 @@ export function App() {
   const unfinished = visibleHistory.filter(saved => saved.status === 'in-progress');
   const reports = visibleHistory.filter(saved => saved.status === 'submitted');
   const displayedReport = accountReport?.attempt ?? attempt;
+  const examActive = view === 'exam';
   const canStart = supportsSaving && hasReadyBank && !historyLoading && historyErrors.length === 0;
   const questions = attempt?.snapshot.questions ?? [];
   const questionIndex = attempt ? Math.max(0, questions.findIndex(q => q.id === attempt.currentQuestionId)) : 0;
@@ -548,8 +549,8 @@ export function App() {
           <div className="site-header__actions">
             {view !== 'start' && <Link className="button button--quiet" to="/">Home</Link>}
             <Link className="button button--quiet" aria-current={view === 'history' ? 'page' : undefined} to="/history">Attempt history</Link>
-            {account.userId && <Link className="button button--quiet" aria-current={view === 'settings' ? 'page' : undefined} to="/settings">Account settings</Link>}
-            <AccountHeader account={account} />
+            {account.userId && !examActive && <Link className="button button--quiet" aria-current={view === 'settings' ? 'page' : undefined} to="/settings">Account settings</Link>}
+            <AccountHeader account={account} examActive={examActive} />
           </div>
         </div>
       </Container>

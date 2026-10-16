@@ -362,4 +362,5 @@ html:has(.dialog[open]) { overflow: hidden; }
 .site-header__actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-left: auto; max-width: 100%; min-width: 0; }
 .header-auth { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px; min-width: 0; max-width: 100%; }
 .header-account-email { max-width: 28ch; overflow-wrap: anywhere; text-align: right; color: #526662; font-size: .875rem; }
+.header-auth-hint { flex-basis: 100%; max-width: 42ch; overflow-wrap: anywhere; text-align: right; color: #526662; font-size: .875rem; }
 .header-recovery-notice { flex-basis: 100%; overflow-wrap: anywhere; }
