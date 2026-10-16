@@ -62,6 +62,8 @@ For Vercel, set the account URL/key/enable variables in the relevant project env
 
 ## Database and functions
 
+**Approved ngrok origin update — 2026-10-16:** ARCHIVE_ALLOWED_ORIGINS now includes https://wager-geranium-crafter.ngrok-free.dev alongside https://pcao-f-practice-exam-one.vercel.app and localhost/127.0.0.1 on ports 5173, 4173 and 4210. All 11 HTTP preflight/anonymous/origin checks pass, and an authenticated real-bank backup/receipt check with the ngrok Origin header passes; its disposable account/report were deleted. No browser tests or frontend redeploy were needed. This setting is shared by backup-report, delete-report and delete-account. See [ACCOUNT_BACKUP_FAILURE_STATUS.md](ACCOUNT_BACKUP_FAILURE_STATUS.md).
+
 **Production origin update — 2026-10-15:** The owner approved adding https://pcao-f-practice-exam-one.vercel.app to ARCHIVE_ALLOWED_ORIGINS while retaining localhost/127.0.0.1 at ports 5173, 4173 and 4210. The secret update is applied. All three production function preflights now return 204 with the exact origin; all three anonymous requests remain rejected, an unrelated origin remains rejected, and the existing 127.0.0.1:5173 preflight passes (8/8 checks). No frontend rebuild is needed for this hosted setting. This does not verify authenticated account deletion or remove the named QA account. See BUG_004_ACCOUNT_DELETION_STATUS.md and test-results/bug-004-origin-fix-verification.json.
 
 The repository pins Supabase CLI 2.120.0 as a development dependency. Install it with `npm ci --include=optional`, then run the following from the repository root in an authenticated operator session:
@@ -113,7 +115,7 @@ Database tests run the actual migration in embedded PostgreSQL (PGlite) with a m
 ## Required hosted smoke checks
 
 Before enabling accounts publicly:
-- Confirm signup signs in immediately without any verification email, automatically backs up completed guest history without an import prompt, and creates no report rows for an empty browser.
+- Confirm signup signs in immediately without any verification email, automatically backs up completed guest history without an import prompt, and creates no report rows for an empty browser. Both signup cases should enable backup for future completed exams without visiting Settings. Reload must retain the preference, while signing into an existing account must preserve its saved opt-out.
 - Verify correct/wrong-password login, session persistence, sign-out and password recovery.
 - Back up a completed real-bank report automatically on signup or with its individual backup action; verify its payload/hash and original Results/PDF.
 - In a separate device/browser profile, sign in and open that same report.

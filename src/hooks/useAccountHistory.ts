@@ -116,12 +116,16 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
 
   useEffect(() => {
     current.current.cursor = undefined; current.current.listVersion += 1;
-    setRows([]); setJobs([]); setEnabled(false); setMore(false); setError(''); setNotice(''); setLoading(false); setBackingUp(null);
+    setRows([]); setJobs([]); setEnabled(Boolean(userId && current.current.signupPreparing)); setMore(false); setError(''); setNotice(''); setLoading(false); setBackingUp(null);
     if (!userId || !repository) return;
     const version = epoch.current;
     const preferenceVersion = current.current.preferenceVersion;
-    void repository.preferences(userId).then(value => { if (active(userId, version) && preferenceVersion === current.current.preferenceVersion) setEnabled(value); })
-      .catch(failure => { if (active(userId, version)) setError(errorFrom(failure).message); });
+    // Signup initializes its preference below. An overlapping read of the database's
+    // initial false value must not turn it off again. Sign-in preserves saved choices.
+    if (!current.current.signupPreparing) {
+      void repository.preferences(userId).then(value => { if (active(userId, version) && preferenceVersion === current.current.preferenceVersion) setEnabled(value); })
+        .catch(failure => { if (active(userId, version)) setError(errorFrom(failure).message); });
+    }
     void loadMore(true);
     void archiveStore.jobs(userId).then(value => { if (active(userId, version)) setJobs(value); })
       .catch(() => { if (active(userId, version)) setError('Device backup bookkeeping is unavailable. Your reports are kept on this device.'); });
@@ -231,6 +235,11 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
       if (mode === 'signup') {
         const id = data.session.user.id;
         const version = epoch.current;
+        if (!active(id, version)) return;
+        try { await setAutomatic(true); }
+        catch {
+          if (active(id, version)) setError('Your account was created, but automatic backup could not be enabled. Completed guest reports will still be queued. Enable automatic backup in Account settings when the connection is available.');
+        }
         if (!active(id, version)) return;
         try {
           const migration = await withBrowserStorageLock(() => {

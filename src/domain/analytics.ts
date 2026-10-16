@@ -1,4 +1,4 @@
-export type AnalyticsView = 'start' | 'exam' | 'results' | 'settings';
+export type AnalyticsView = 'start' | 'exam' | 'results' | 'settings' | 'history';
 export type AnalyticsContext = { view: AnalyticsView; difficulty: 'intermediate' | 'advanced' | 'original' | null };
 export type AnalyticsProperties = Record<string, string | number | boolean | null>;
 export type AnalyticsEvent = 'signup_succeeded' | 'login_succeeded' | 'logout_succeeded' | 'signed_in_activity' |

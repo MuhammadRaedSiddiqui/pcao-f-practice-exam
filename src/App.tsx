@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link, useBlocker, useLocation, useNavigate } from 'react-router';
 import { type Question } from './domain/bank';
 import { createDifficultyBankLoader, difficultyLabel, type Difficulty, type DifficultyBankState } from './domain/difficulty';
 import {
@@ -9,7 +10,7 @@ import {
 import { MarkdownContent } from './ui/MarkdownContent';
 import { Button, Card, Container, Dialog } from './ui/primitives';
 import { ReviewSubmitDialog } from './ui/ReviewSubmitDialog';
-import { practiceResult } from './domain/results';
+import { practiceResult, resultTitle } from './domain/results';
 import { SourceCoursesDrawer } from './ui/SourceCoursesDrawer';
 import { ResultsPage } from './ui/ResultsPage';
 import { withBrowserStorageLock } from './domain/browserStorage';
@@ -20,8 +21,7 @@ import { AccountHeader } from './ui/AccountHeader';
 import { AccountSettingsPage } from './ui/AccountSettingsPage';
 import type { CloudReport } from './domain/cloudReports';
 import { attachAnalyticsEngagement, setAnalyticsContext, trackEvent } from './services/analytics';
-
-type View = 'start' | 'exam' | 'results' | 'settings';
+import { flowState, routeView, viewPath, type AppView } from './domain/navigation';
 
 // Storage access itself can throw; domain helpers catch these failures.
 const browserStorage: AttemptStorage = {
@@ -48,13 +48,16 @@ function selectionLabel(question: Question): string {
 export function App() {
   const [loadBank] = useState(() => createDifficultyBankLoader());
   const [bankStates, setBankStates] = useState<Record<Difficulty, DifficultyBankState>>({ advanced: { status: 'loading' }, intermediate: { status: 'loading' } });
+  const courseBankStates = [bankStates.advanced, bankStates.intermediate];
+  const coursesBankState = courseBankStates.find(state => state.status === 'ready') ??
+    courseBankStates.find(state => state.status === 'loading') ??
+    courseBankStates.find(state => state.status === 'error') ?? bankStates.advanced;
   const hasReadyBank = Object.values(bankStates).some(state => state.status === 'ready');
   const banksLoading = Object.values(bankStates).some(state => state.status === 'loading');
   const bankStatus = hasReadyBank ? 'ready' : banksLoading ? 'loading' : 'error';
   const failedBanks = (['advanced', 'intermediate'] as const).filter(difficulty => bankStates[difficulty].status === 'error');
   const mounted = useRef(false);
   const [coursesOpen, setCoursesOpen] = useState(false);
-  const [coursesDifficulty, setCoursesDifficulty] = useState<Difficulty>('advanced');
   const [history, setHistory] = useState<Attempt[]>([]);
   const [accountReport, setAccountReport] = useState<{ userId: string; attempt: Attempt } | null>(null);
   const [historyErrors, setHistoryErrors] = useState<string[]>([]);
@@ -62,14 +65,15 @@ export function App() {
   const [preparation, setPreparation] = useState<ExamPreparation | null>(null);
   const preparationRef = useRef<ExamPreparation | null>(null);
   const starting = useRef(false);
+  const startClickPending = useRef(false);
   const [startPending, setStartPending] = useState(false);
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const attemptRef = useRef<Attempt | null>(null);
   const pendingEdits = useRef<{ attemptId: string; edit: (current: Attempt) => Attempt; optimistic: boolean }[]>([]);
-  const [view, setView] = useState<View>('start');
+  const location = useLocation();
+  const navigateRoute = useNavigate();
+  const view = routeView(location.pathname, location.state);
   const [reviewStage, setReviewStage] = useState<'review' | 'confirm' | null>(null);
-  const [leavingExam, setLeavingExam] = useState(false);
-  const [leaveDestination, setLeaveDestination] = useState<'start' | 'settings'>('start');
   const [keepAccountCopy, setKeepAccountCopy] = useState(false);
   const jumpFocus = useRef(false);
   const finalizedIds = useRef(new Set<string>());
@@ -79,14 +83,20 @@ export function App() {
   const questionHeading = useRef<HTMLHeadingElement>(null);
   const resultsHeading = useRef<HTMLHeadingElement>(null);
   const settingsHeading = useRef<HTMLHeadingElement>(null);
+  const historyHeading = useRef<HTMLHeadingElement>(null);
   const startHeading = useRef<HTMLHeadingElement>(null);
-  const previousView = useRef<View>(view);
+  const previousView = useRef<AppView>(view);
   const supportsSaving = Boolean(navigator.locks);
   const account = useAccountHistory(browserStorage, history, refreshHistory);
+  const previousOwner = useRef<string | null>(null);
+  const blocker = useBlocker(() => view === 'exam' && attemptRef.current?.status === 'in-progress' &&
+    account.canView(attemptRef.current.id) && remainingMilliseconds(attemptRef.current.deadlineAt) > 0);
+  const leavingExam = blocker.state === 'blocked';
+  const leaveDestination = blocker.location ? routeView(blocker.location.pathname, blocker.location.state) : 'history';
   const reportAttempt = accountReport?.attempt ?? attempt;
   useEffect(() => attachAnalyticsEngagement(), []);
   useEffect(() => {
-    setAnalyticsContext({ view, difficulty: view === 'start' || view === 'settings' ? null : reportAttempt?.difficulty ?? 'original' });
+    setAnalyticsContext({ view, difficulty: view === 'start' || view === 'settings' || view === 'history' ? null : reportAttempt?.difficulty ?? 'original' });
   }, [view, reportAttempt?.difficulty]);
   const previousReview = useRef(false);
   useEffect(() => {
@@ -95,6 +105,40 @@ export function App() {
   }, [reviewStage, attempt?.difficulty]);
   const unfinishedDeadlines = history.filter(saved => saved.status === 'in-progress')
     .map(saved => `${saved.id}:${saved.deadlineAt}`).join('|');
+
+  function cancelNavigation() { if (blocker.state === 'blocked') blocker.reset(); }
+
+  function setView(next: AppView, replace = false, attemptId = attemptRef.current?.id ?? null) {
+    void navigateRoute(viewPath(next), {
+      replace,
+      state: next === 'exam' || next === 'results' ? { view: next, attemptId } : null,
+    });
+  }
+
+  // Restore a saved exam/report when Back or Forward reaches its root entry.
+  // Browser history is untrusted; ownership and the snapshot are checked again.
+  useEffect(() => {
+    setReviewStage(null); setCoursesOpen(false); updatePreparation(null);
+    if (view !== 'exam' && view !== 'results') return;
+    if (historyLoading || account.authLoading) return;
+    const target = flowState(location.state);
+    if (!target?.attemptId) {
+      if (view === 'exam' || !accountReport || accountReport.userId !== account.userId) setView('history', true);
+      return;
+    }
+    if (view === 'results' && accountReport?.attempt.id === target.attemptId && accountReport.userId === account.userId) return;
+    const saved = recoverAttempt(browserStorage, target.attemptId);
+    if (!saved.ok || !saved.attempt || !account.canView(target.attemptId) || (view === 'results' && saved.attempt.status !== 'submitted')) {
+      updateAttempt(null); setView('history', true); return;
+    }
+    updateAttempt(saved.attempt);
+    if (view === 'exam' && saved.attempt.status === 'submitted') setView('results', true);
+    setNow(Date.now());
+  }, [location.key, historyLoading, account.authLoading, account.userId]);
+
+  useEffect(() => {
+    if (blocker.state === 'blocked' && (attempt?.status !== 'in-progress' || remainingMilliseconds(attempt.deadlineAt) === 0)) blocker.reset();
+  }, [blocker, attempt?.status, now]);
 
   function updatePreparation(next: ExamPreparation | null) {
     preparationRef.current = next;
@@ -159,7 +203,7 @@ export function App() {
     if (!recovered.attempt) {
       updateAttempt(null);
       setReviewStage(null);
-      setLeavingExam(false);
+      cancelNavigation();
       updatePreparation(null);
       setView('start');
       setMessage('This attempt is no longer saved. It may have been replaced in another tab.');
@@ -169,7 +213,7 @@ export function App() {
     if ((latest.revision ?? 0) !== (current.revision ?? 0) || latest.status !== current.status) updateAttempt(latest);
     if (latest.status === 'submitted' && current.status === 'in-progress') {
       setReviewStage(null);
-      setLeavingExam(false);
+      cancelNavigation();
       updatePreparation(null);
       setCoursesOpen(false);
       setView('results');
@@ -246,7 +290,12 @@ export function App() {
       settingsHeading.current?.focus({ preventScroll: true });
       window.scrollTo(0, 0);
     }
-    if (view === 'start' && previousView.current === 'settings') startHeading.current?.focus({ preventScroll: true });
+    if (view === 'history') {
+      historyHeading.current?.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+    }
+    if (view === 'start' && previousView.current !== 'start') startHeading.current?.focus({ preventScroll: true });
+    document.title = view === 'history' ? 'Attempt history — PCAO-F practice' : view === 'settings' ? 'Account settings — PCAO-F practice' : 'PCAO-F practice';
     previousView.current = view;
   }, [view, attempt?.currentQuestionId, accountReport?.attempt.id]);
 
@@ -288,7 +337,7 @@ export function App() {
   }
 
   useEffect(() => {
-    if (view !== 'exam') starting.current = false;
+    if (view !== 'exam') { starting.current = false; startClickPending.current = false; }
   }, [view]);
 
   async function start(confirmedIds: readonly string[] = []) {
@@ -328,6 +377,7 @@ export function App() {
       if (!saved.attempt) return;
       trackEvent('exam_started', { difficulty: saved.attempt.difficulty ?? 'original', attempt_id: saved.attempt.id });
       opened = true;
+      startClickPending.current = true;
       updatePreparation(null);
       updateAttempt(saved.attempt);
       setView('exam');
@@ -369,17 +419,18 @@ export function App() {
     if (account.currentOwner() !== row.user_id) return;
     updateAttempt(null);
     setAccountReport({ userId: row.user_id, attempt: payload });
-    setView('results'); setMessage('');
+    setView('results', false, row.attempt_id); setMessage('');
     window.scrollTo(0, 0);
   }
 
   useEffect(() => {
     setKeepAccountCopy(false);
-    if (!account.userId && view === 'settings') setView('start');
-    if (accountReport && accountReport.userId !== account.userId) { setAccountReport(null); setView('start'); }
+    if (previousOwner.current && !account.userId && view === 'settings') setView('history', true);
+    previousOwner.current = account.userId;
+    if (accountReport && accountReport.userId !== account.userId) { setAccountReport(null); setView('history', true); }
     const current = attemptRef.current;
     if (current && !account.canView(current.id)) {
-      updateAttempt(null); setReviewStage(null); setLeavingExam(false); updatePreparation(null); setView('start');
+      updateAttempt(null); setReviewStage(null); cancelNavigation(); updatePreparation(null); setView('history', true);
     }
   }, [account.userId]);
 
@@ -456,7 +507,7 @@ export function App() {
     }
     updateAttempt(saved.attempt);
     setReviewStage(null);
-    setLeavingExam(false);
+    cancelNavigation();
     updatePreparation(null);
     setCoursesOpen(false);
     setView('results');
@@ -465,24 +516,13 @@ export function App() {
     window.scrollTo(0, 0);
   }
 
-  function showAccountPage(destination: 'start' | 'settings') {
+  function showAccountPage(destination: 'history' | 'settings') {
     setReviewStage(null);
-    setLeavingExam(false);
-    setView(destination === 'settings' && account.userId ? 'settings' : 'start');
+    setView(destination);
     window.scrollTo(0, 0);
   }
 
-  function showHistory() { showAccountPage('start'); }
-
-  function requestAccountPage(destination: 'start' | 'settings') {
-    if (view === 'exam' && attempt?.status === 'in-progress') {
-      if (canEdit()) { setLeaveDestination(destination); setLeavingExam(true); }
-      return;
-    }
-    showAccountPage(destination);
-  }
-
-  function requestHistory() { requestAccountPage('start'); }
+  function showHistory() { showAccountPage('history'); }
 
   function submit() {
     if (attempt && reviewStage === 'confirm') finalize(attempt.id);
@@ -506,8 +546,9 @@ export function App() {
         <div className="site-header__inner">
           <div className="brand"><span className="brand__mark" aria-hidden="true">P</span><span>PCAO-F <span className="brand__suffix">practice</span></span></div>
           <div className="site-header__actions">
-            {view !== 'start' && <Button variant="quiet" onClick={requestHistory}>Attempt history</Button>}
-            {account.userId && <Button variant="quiet" aria-current={view === 'settings' ? 'page' : undefined} onClick={() => requestAccountPage('settings')}>Account settings</Button>}
+            {view !== 'start' && <Link className="button button--quiet" to="/">Home</Link>}
+            <Link className="button button--quiet" aria-current={view === 'history' ? 'page' : undefined} to="/history">Attempt history</Link>
+            {account.userId && <Link className="button button--quiet" aria-current={view === 'settings' ? 'page' : undefined} to="/settings">Account settings</Link>}
             <AccountHeader account={account} />
           </div>
         </div>
@@ -515,7 +556,7 @@ export function App() {
     </header>
     {view === 'exam' && attempt && <div className="exam-bar">
       <Container className="exam-bar__inner">
-        <p className="exam-bar__title">{attempt.snapshot.title}<span className="exam-difficulty">{difficultyLabel(attempt.difficulty)}</span></p>
+        <p className="exam-bar__title">{resultTitle(attempt)}<span className="exam-difficulty">{difficultyLabel(attempt.difficulty)}</span></p>
         <div className="exam-bar__metrics">
           <p className="answered-count"><strong>{completed} / {questions.length}</strong><span>answered</span></p>
           <div className={'timer' + (reviewStage || leavingExam ? ' timer--concealed' : '')} role="timer" aria-live="off" aria-label="Time remaining" aria-hidden={Boolean(reviewStage || leavingExam)}>
@@ -524,17 +565,24 @@ export function App() {
         </div>
       </Container>
     </div>}
-    <main className={view === 'exam' ? 'exam-main' : undefined}>
+    <main className={view === 'exam' ? 'exam-main' : undefined} onClickCapture={event => {
+      if (view !== 'exam' || !startClickPending.current) return;
+      // A dialog activation can be followed by another click on the newly exposed view.
+      // Cancel its default action before a label activates its answer input. A fresh
+      // single click or keyboard activation ends this guard without a timed input delay.
+      if (event.detail > 1) { event.preventDefault(); event.stopPropagation(); return; }
+      startClickPending.current = false;
+    }}>
       <Container className="reading-column">
         {message && !preparation && <div className="validation-message app-message" role="alert">{message}</div>}
-        {view === 'start' && <>
+        {(view === 'start' || view === 'history') && <>
+          {view === 'start' ? <>
           <p className="eyebrow">Independent practice</p>
           <h1 ref={startHeading} tabIndex={-1}>Independent PCAO-F Practice</h1>
           <p className="lead">Independently prepared practice questions to help you prepare for PCAO-F. This is not an official certification exam.</p>
-          <Button className="source-courses-button" aria-haspopup="dialog" aria-expanded={coursesOpen} onClick={() => { setCoursesDifficulty('advanced'); setCoursesOpen(true); }}>Source courses</Button>
-          <SourceCoursesDrawer open={coursesOpen} difficulty={coursesDifficulty} bankState={bankStates[coursesDifficulty]} onClose={() => setCoursesOpen(false)}
-            onSelect={difficulty => { setCoursesDifficulty(difficulty); void ensureBank(difficulty); }}
-            onRetry={() => { void ensureBank(coursesDifficulty, true); }} />
+          <Button className="source-courses-button" aria-haspopup="dialog" aria-expanded={coursesOpen} onClick={() => setCoursesOpen(true)}>Source courses</Button>
+          <SourceCoursesDrawer open={coursesOpen} bankState={coursesBankState} onClose={() => setCoursesOpen(false)}
+            onRetry={() => { void ensureBank('advanced', true); void ensureBank('intermediate', true); }} />
           <Card className="start-card">
             <div className="status-heading">
               <h2>Before you begin</h2>
@@ -570,6 +618,13 @@ export function App() {
               <Button variant={unfinished.length ? 'secondary' : 'primary'} disabled={!canStart} aria-haspopup="dialog" onClick={openDifficulty}>{unfinished.length ? 'Start another exam' : 'Start exam'}</Button>
             </div>
           </Card>
+          </> : <>
+            <p className="eyebrow">Your practice</p>
+            <h1 ref={historyHeading} tabIndex={-1}>Attempt history</h1>
+            <p className="lead">Resume an unfinished exam or open a completed report.</p>
+            {unfinished.length > 0 && <p className="resume-note">Your timer is still running. Resume with your saved answers, flags, and original deadline.</p>}
+            <Button variant="primary" disabled={!canStart} aria-haspopup="dialog" onClick={openDifficulty}>{unfinished.length ? 'Start another exam' : 'Start exam'}</Button>
+          </>}
           <section className="history-section" aria-labelledby="history-title">
             <h2 id="history-title">Your attempts</h2>
             <p className="muted">{account.available ? 'Device history stays in this browser. Create an account to automatically back up completed reports across devices.' : 'History is saved on this device/browser. It is not synced to other devices.'}</p>
@@ -579,7 +634,7 @@ export function App() {
               <div className="history-list">
                 {unfinished.map(saved => <Card key={saved.id} className="history-row">
                   <div className="history-row__text"><strong>Unfinished attempt</strong><span>{difficultyLabel(saved.difficulty)} · Started {dateTime(saved.startedAt)} · Dataset {saved.datasetVersion}</span><span>Deadline {dateTime(saved.deadlineAt)}</span></div>
-                  {unfinished.length > 1 && <Button onClick={() => openSaved(saved)}>Resume attempt</Button>}
+                  {(view === 'history' || unfinished.length > 1) && <Button onClick={() => openSaved(saved)}>Resume attempt</Button>}
                 </Card>)}
                 {reports.map(saved => {
                   const result = gradeAttempt(saved);
@@ -633,9 +688,9 @@ export function App() {
             <Button disabled={questionIndex === questions.length - 1} onClick={() => navigate(questions[questionIndex + 1]?.id)}>Next</Button>
             <Button variant="primary" onClick={() => { if (canEdit()) setReviewStage('review'); }}>Review &amp; submit</Button>
           </nav>
-          {leavingExam && <Dialog open title="Leave exam?" onClose={() => setLeavingExam(false)}
-            actions={<><Button onClick={() => setLeavingExam(false)}>Stay in exam</Button><Button variant="primary" onClick={() => { if (canEdit()) showAccountPage(leaveDestination); }}>{leaveDestination === 'settings' ? 'Go to account settings' : 'Go to attempt history'}</Button></>}>
-            <p>Your timer will keep running while you view {leaveDestination === 'settings' ? 'account settings' : 'attempt history'}. Your answers and flags are saved, and you can resume with the original deadline.</p>
+          {leavingExam && <Dialog open title="Leave exam?" onClose={cancelNavigation}
+            actions={<><Button onClick={cancelNavigation}>Stay in exam</Button><Button variant="primary" onClick={() => { if (canEdit() && blocker.state === 'blocked') blocker.proceed(); }}>{leaveDestination === 'settings' ? 'Go to account settings' : leaveDestination === 'history' ? 'Go to attempt history' : 'Go to home'}</Button></>}>
+            <p>Your timer will keep running while you view {leaveDestination === 'settings' ? 'account settings' : leaveDestination === 'history' ? 'attempt history' : 'the home page'}. Your answers and flags are saved, and you can resume with the original deadline.</p>
             <p className="review-time" role="timer" aria-live="off" aria-label="Time remaining">Time remaining: <strong>{clock(remainingMilliseconds(attempt.deadlineAt, now))}</strong></p>
           </Dialog>}
           <ReviewSubmitDialog attempt={attempt} stage={reviewStage}
@@ -652,6 +707,12 @@ export function App() {
         {view === 'settings' && account.userId && <AccountSettingsPage key={account.userId}
           account={account} history={history} keepCopy={keepAccountCopy} onKeepCopyChange={setKeepAccountCopy}
           onOpenReport={openAccountReport} onBack={showHistory} headingRef={settingsHeading} />}
+        {view === 'settings' && !account.userId && <>
+          <p className="eyebrow">Your account</p>
+          <h1 ref={settingsHeading} tabIndex={-1}>Account settings</h1>
+          <Card>{account.authLoading ? <p role="status">Loading your account…</p> : <p>{account.available ? 'Sign in or create an account using the header to manage your account settings.' : 'Account access is not configured. You can continue using guest attempt history.'}</p>}</Card>
+          <Link className="button button--quiet" to="/history">Go to attempt history</Link>
+        </>}
 
         {view === 'results' && displayedReport?.status === 'submitted' && <>
           <ResultsPage key={displayedReport.id} attempt={displayedReport} headingRef={resultsHeading} canStart={canStart} onStart={openDifficulty} onHistory={showHistory} />
