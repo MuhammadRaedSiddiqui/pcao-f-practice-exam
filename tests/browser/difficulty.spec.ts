@@ -106,7 +106,7 @@ test('Advanced persists in Exam, Results and history; new starts from Results us
   const record = Object.values(active).find(value => value.includes('"snapshot"'))!;
   expect(JSON.parse(record).difficulty).toBe('advanced');
   await reloadPage(page);
-  await page.getByRole('button', { name: 'Resume attempt', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /^Question \d+ of 60$/ })).toBeVisible();
   await expect(page.getByRole('dialog')).not.toBeVisible();
   await page.getByRole('button', { name: 'Review & submit', exact: true }).click();
   await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
@@ -117,7 +117,7 @@ test('Advanced persists in Exam, Results and history; new starts from Results us
   await expect(page.getByRole('dialog', { name: 'Choose exam difficulty' })).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Intermediate', exact: true })).toBeChecked();
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await page.getByRole('button', { name: 'Attempt history', exact: true }).first().click();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await expect(page.locator('.history-row')).toContainText('Advanced');
 });
 
@@ -129,7 +129,7 @@ test('replacement preparation preserves the attempt on back and starts the confi
   await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
   await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Attempt history', exact: true }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await page.getByRole('button', { name: 'Go to attempt history', exact: true }).click();
   const before = await storage(page);
   await page.getByRole('button', { name: 'Start another exam', exact: true }).click();
@@ -181,24 +181,22 @@ test('expiry closes difficulty selection and preserves the original report', asy
   expect(JSON.parse(stored['pcao-f:attempt:v1:' + saved.id])).toMatchObject({ difficulty: 'advanced', snapshot: saved.snapshot, status: 'submitted' });
 });
 
-test('source courses remain associated with the selected level', async ({ page, request }) => {
-  const bank = await (await request.get('/easy-question-bank.json')).json();
+test('shared source courses match the validated bank without changing difficulty or storage', async ({ page, request }) => {
+  const bank = await (await request.get('/question-bank.json')).json();
   const courses = [...new Map<string, { courseTitle: string; url: string }>(bank.questions
     .flatMap((question: { sources: { courseTitle: string; url: string }[] }) => question.sources)
     .map((source: { courseTitle: string; url: string }) => [JSON.stringify([source.courseTitle, source.url]), source] as const)).values()];
   await page.goto('/');
   await page.getByRole('button', { name: 'Source courses', exact: true }).click();
   const drawer = page.getByRole('dialog', { name: 'Courses used for this mock' });
-  await expect(drawer.getByRole('heading', { name: 'Advanced source courses', exact: true })).toBeVisible();
-  await expect(drawer.getByRole('link')).toHaveCount(10);
-  await drawer.getByRole('radio', { name: 'Intermediate', exact: true }).check();
-  await expect(drawer.getByRole('heading', { name: 'Intermediate source courses', exact: true })).toBeVisible();
+  await expect(drawer.getByRole('heading', { name: 'Courses used for this mock', exact: true })).toBeVisible();
+  await expect(drawer.getByRole('radio')).toHaveCount(0);
+  await expect(drawer).toContainText('These courses are used for both Intermediate and Advanced practice.');
   await expect(drawer.getByRole('link')).toHaveCount(courses.length);
   for (const source of courses) {
     await expect(drawer.getByRole('link', { name: source.courseTitle + ' (opens in a new tab)', exact: true })).toHaveAttribute('href', source.url);
   }
-  await drawer.getByRole('radio', { name: 'Advanced', exact: true }).check();
-  await expect(drawer.getByRole('link')).toHaveCount(10);
+  await expect(drawer.getByRole('link')).toHaveCount(courses.length);
   expect(await storage(page)).toEqual({});
 });
 
@@ -250,7 +248,7 @@ for (const width of [320, 1366]) {
     await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeFocused();
     await expect(page.locator('.exam-bar')).toContainText('Intermediate');
-    await expect(page.locator('.exam-bar')).toContainText(bank.title);
+    await expect(page.locator('.exam-bar')).toContainText('Independent PCAO-F Practice — Intermediate');
     for (const id of bank.questions[0].correctOptionIds) await page.locator(`input[value="${id}"]`).check();
     const multiIndex = bank.questions.findIndex((question: { selectionCount: number }) => question.selectionCount > 1);
     await page.getByRole('button', { name: 'Review & submit', exact: true }).click();
@@ -268,7 +266,7 @@ for (const width of [320, 1366]) {
     const key = 'pcao-f:attempt:v1:' + id;
     expect(JSON.parse(savedBeforeReload[key])).toMatchObject({ difficulty: 'intermediate', datasetVersion: '1.0.0', snapshot: bank });
     await reloadPage(page);
-    await page.getByRole('button', { name: 'Resume attempt', exact: true }).click();
+    await expect(page.getByRole('heading', { name: `Question ${multiIndex + 1} of 60`, exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: `Question ${multiIndex + 1} of 60`, exact: true })).toBeFocused();
     expect((await storage(page))[key]).toEqual(savedBeforeReload[key]);
     await page.getByRole('button', { name: 'Review & submit', exact: true }).click();
@@ -290,6 +288,8 @@ for (const width of [320, 1366]) {
         index === 0 ? { ...question, stemMarkdown: 'Updated Intermediate content for testing only.' } : question),
     } }));
     await reloadPage(page);
+    await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
+    await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
     await expect(page.locator('.history-row')).toContainText('Intermediate');
     await page.getByRole('button', { name: 'Open report', exact: true }).click();
     await expect(page.locator('.result-metadata')).toContainText('Dataset version1.0.0');

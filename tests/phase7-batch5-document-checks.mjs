@@ -1,0 +1,27 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+const dir='docs/guided-practice/',out='test-results/guided-practice/phase-7-batch-5/',sha=x=>createHash('sha256').update(x).digest('hex');
+const baseline=JSON.parse(fs.readFileSync(out+'preservation-before.json','utf8'));
+const statusPaths=['AGENTS.md','PROJECT_IMPLEMENTATION_STATUS.md',...['MASTER-PLAN','ARCHITECTURE','EXECUTION-CHECKLIST','VERIFICATION-MATRIX'].map(n=>dir+'GUIDED-PRACTICE-'+n+'.md')],statusEvidence=[];
+for(const p of statusPaths){
+ if(baseline.files.some(f=>f.path===p))throw new Error('Protected document: '+p);
+ const before=fs.readFileSync(p,'utf8'),prefix=p.startsWith('docs/')?'':dir;
+ if(before.includes('**CURRENT — Phase 7 Batch 5 and sixty-item inventory prepared'))continue;
+ const insert='\n\n**CURRENT — Phase 7 Batch 5 and sixty-item inventory prepared (2026-10-18):** Owner technically accepts Batch 4 for continued drafting only; Batches 1–4 have no final educational approval. Exactly Q50/Q51/Q52/Q53/Q54/Q55/Q56/Q57/Q58/Q60 are new drafts: eight single/two two-response (Q50/Q54), D1–D7 2/2/1/2/1/1/1; exact Q52/Q53/Q58 tables. All **10/10** references newly inspected; expansion coverage **58/58 AI checks** for fifty drafts. Inventory reconciles **60 unique IDs**, ten accepted pilot versions plus fifty drafts, required domains **8/13/7/10/7/9/6** and responses **48/10/2**, with no omissions/duplicates/overlap. Final focused checks **285/285** in eleven files; **223 protected files** and all forty prior content/48 source records unchanged. New Q58 Hint 3 refined after cumulative review; its initial wording/identity and both passing test runs are retained. Independent human reviews **0/50**, final owner educational approvals **0/50**, actual approved digests null; pilot waiver not extended. See [Batch 5 review]('+prefix+'PHASE-7-BATCH-5-REVIEW.md) and [sixty-item audit]('+prefix+'PHASE-7-60-QUESTION-CONTENT-INVENTORY-AUDIT.md). Pilot 1.0.0 identities remain exact; transition to planned 1.1.0 changes g1 and requires a separate compatibility/approval decision. **Phase 7 is not complete.** Stop for owner review; final educational approval, release integration/publication, catalog/flag changes, deployment, commit/push and Phase 8 remain unauthorized. Production stays disabled/catalog empty. Accessibility/device/browser and historical PDF/recovery/timing/resource-pressure release obligations remain open. Older batch-only counts/stop instructions below are historical.';
+ const first=before.indexOf('\n'),after=before.slice(0,first)+insert+before.slice(first);if(after.replace(insert,'')!==before)throw new Error('History changed');
+ fs.writeFileSync(p,after);statusEvidence.push({path:p,beforeSha256:sha(before),afterSha256:sha(after),priorTextRetainedExactly:true});
+}
+if(statusEvidence.length)fs.writeFileSync(out+'status-update-checks.json',JSON.stringify(statusEvidence,null,2)+'\n');
+// Make the checker output's self-link real before testing every report link.
+fs.writeFileSync(out+'document-checks.json',JSON.stringify({status:'running'})+'\n');
+const files=[dir+'PHASE-7-BATCH-5-REVIEW.md',dir+'PHASE-7-60-QUESTION-CONTENT-INVENTORY-AUDIT.md',dir+'PHASE-7-CONTENT-LEDGER.md',dir+'content/intermediate-expansion/SOURCE-VERIFICATION-LEDGER.md',dir+'content/intermediate-expansion/batch-5.md',dir+'content/intermediate-expansion/batch-5-questions-only.md'];
+const links=[];for(const p of files){const text=fs.readFileSync(p,'utf8');for(const m of text.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)){
+ const target=m[1];if(/^(?:https?:|#)/.test(target))continue;const resolved=path.resolve(path.dirname(p),target.split('#')[0]);links.push({from:p,target,exists:fs.existsSync(resolved)});
+}}
+const read=p=>JSON.parse(fs.readFileSync(out+p,'utf8')),identities=read('draft-identities.json'),audit=read('sixty-item-inventory.json'),review=fs.readFileSync(files[0],'utf8'),auditReport=fs.readFileSync(files[1],'utf8');
+const expected=(text,r)=>[r.reviewId,r.draftSha256,r.sourceFingerprint,r.prospectiveG1].every(v=>text.includes(v));
+const beforeHint=read('q58-hint-refinement-before.json'),finalHint=identities.find(r=>r.questionId==='Q58');
+const checks={files:files.map(p=>({path:p,sha256:sha(fs.readFileSync(p))})),localLinks:links,batch5Triplets:identities.map(r=>({questionId:r.questionId,reported:expected(review,r)})),allSixtyTriplets:audit.rows.map(r=>({questionId:r.questionId,reported:expected(auditReport,r)})),statusHistoryRetained:read('status-update-checks.json').every(r=>r.priorTextRetainedExactly),q58Refinement:{q1Unchanged:beforeHint.identity.sourceFingerprint===finalHint.sourceFingerprint,changedDraftSha:beforeHint.identity.draftSha256!==finalHint.draftSha256,changedG1:beforeHint.identity.prospectiveG1!==finalHint.prospectiveG1},phase7NotDeclaredComplete:review.includes('Phase 7 is not complete')&&auditReport.includes('Phase 7 is not complete')};
+checks.ok=links.every(l=>l.exists)&&checks.batch5Triplets.every(r=>r.reported)&&checks.allSixtyTriplets.every(r=>r.reported)&&checks.statusHistoryRetained&&Object.values(checks.q58Refinement).every(Boolean)&&checks.phase7NotDeclaredComplete;
+fs.writeFileSync(out+'document-checks.json',JSON.stringify(checks,null,2)+'\n');console.log(JSON.stringify({documents:files.length,localLinks:links.length,batch5Identities:checks.batch5Triplets.length,inventoryIdentities:checks.allSixtyTriplets.length,ok:checks.ok}));if(!checks.ok)process.exitCode=1;

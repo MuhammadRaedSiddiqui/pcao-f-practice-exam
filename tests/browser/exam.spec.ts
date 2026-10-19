@@ -43,7 +43,7 @@ test('complete means required cardinality, partial answers persist, and checkbox
   await expect(page.getByRole('heading', { name: 'Question 5 of 60', exact: true })).toBeFocused();
   expect((await storedAttempt(page)).currentQuestionId).toBe('Q5');
   await reloadPage(page);
-  await page.getByRole('button', { name: 'Resume attempt' }).click();
+  await expect(page.getByRole('heading', { name: /^Question \d+ of 60$/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Question 5 of 60' })).toBeFocused();
   await page.getByRole('button', { name: 'Previous', exact: true }).click();
   await expect(choices.nth(0)).toBeChecked();
@@ -130,7 +130,8 @@ test('interval expiry continues in review and answers cannot change after the de
   await expect(page.getByRole('heading', { name: 'Your results' })).toBeVisible();
   expect((await storedAttempt(page)).submissionReason).toBe('time expired');
   await reloadPage(page);
-  await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Start new attempt', exact: true }).click();
   await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
   await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
@@ -150,7 +151,7 @@ test('refresh and reopening use the original deadline and auto-submit expired sa
   await page.getByRole('radio').first().check();
   const saved = await storedAttempt(page);
   await reloadPage(page);
-  await page.getByRole('button', { name: 'Resume attempt' }).click();
+  await expect(page.getByRole('heading', { name: /^Question \d+ of 60$/ })).toBeVisible();
   expect((await storedAttempt(page)).deadlineAt).toBe(saved.deadlineAt);
   await page.evaluate(() => {
     const id = JSON.parse(localStorage.getItem('pcao-f:attempt-ids:v1')!)[0];
@@ -169,7 +170,7 @@ test('refresh and reopening use the original deadline and auto-submit expired sa
   expect(report.answers).toEqual(saved.answers);
   expect(report.submissionReason).toBe('time expired');
   await reopened.reload();
-  await reopened.getByRole('button', { name: 'Open report' }).click();
+  await expect(reopened.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
   expect(await storedAttempt(reopened)).toEqual(report);
 });
 

@@ -1,0 +1,86 @@
+{
+  "records": [
+    {
+      "g1": "sha256:g1:6a2fbf8a697535b62306cbf4f2dc29270cf89ab40549c9ee6d8d7f961476a6df",
+      "questionId": "Q4",
+      "reviewId": "gp2-intermediate-q4-v1",
+      "draftSha256": "ec2b5a8986bb144ae53b2d7a2027cbd9e658a639dbcd53a122142ddf3e01044d",
+      "q1": "sha256:q1:9a83ec0a394581b92434e2585ca83c5f31c5e5daa8286834040fb6cfaa0306a1"
+    },
+    {
+      "g1": "sha256:g1:88b880aaa208bb372735e81ecb95fc97547bdb5a2852d2765999d9af69cb0a5f",
+      "questionId": "Q5",
+      "reviewId": "gp2-intermediate-q5-v1",
+      "draftSha256": "d4d96a424115ac6eb0c282d611e436e6a0955514b8240f49808bb6c40b30d09c",
+      "q1": "sha256:q1:ce4cbf6d597d22c22b9fda28adc28c97562edfda5acdbb9618215b402596693e"
+    },
+    {
+      "g1": "sha256:g1:a51817b1730baf110075cc2a45b69d58f22981a1cd0e5a9607e0622ab61fb9a3",
+      "questionId": "Q6",
+      "reviewId": "gp2-intermediate-q6-v1",
+      "draftSha256": "a0b78d6236ecb974b7a8cefcbed7d8836035dfacd5d40ff035df3637157ec51c",
+      "q1": "sha256:q1:6bf7156dbe9af2e8cb7a28d191bca1bb77eb754172ee78246e97eadf83a1fa45"
+    },
+    {
+      "g1": "sha256:g1:029ee148bcb0000a2f264c01d14705b3765e5eb04b73564d3b28ec41f7623ba6",
+      "questionId": "Q10",
+      "reviewId": "gp2-intermediate-q10-v1",
+      "draftSha256": "8c962f7eb6caf0a0d18a033dba2e67659a818bf630bd2109bc009498ea027eea",
+      "q1": "sha256:q1:9409e7944553ad094d080a397daff595a9ddc361d09c138d206cd4c8724663c0"
+    },
+    {
+      "g1": "sha256:g1:865c6477f6da9676310a0bd27f527e1235bc126bc79ce047ef941b501b46de3f",
+      "questionId": "Q12",
+      "reviewId": "gp2-intermediate-q12-v1",
+      "draftSha256": "e2833f3d71d84fa7dd614c70d3a6ae334f5b0e58f7bd082d14dd82beabdd9186",
+      "q1": "sha256:q1:83e2e0474692c99cc4f732bd0c39ebd9439708784d657c4a8d33ec5a125b0e13"
+    },
+    {
+      "g1": "sha256:g1:1e313528cde8ed5ee4614299e294e7cb14d2c76400a0c0f08740e7ba81623060",
+      "questionId": "Q18",
+      "reviewId": "gp2-intermediate-q18-v1",
+      "draftSha256": "0e66340a855d171e14a32b8aee5bcf42e2d60c880eb8ef4457ee057c404c5c59",
+      "q1": "sha256:q1:7c8aa2c80923840442570680195933c5f185099ba20071a8980e3d6d28c8fcff"
+    },
+    {
+      "g1": "sha256:g1:8f1c0147f61634b1bb89e36783fba00f8bbc7af31b4c7897f830ea9980a57c82",
+      "questionId": "Q25",
+      "reviewId": "gp2-intermediate-q25-v1",
+      "draftSha256": "f07fb75192da9ce8358d9678c42a8b0d05bb5469d1b02062e62dca15fc85bf17",
+      "q1": "sha256:q1:60acadbaed616dcac911d547fb14ff6f62f84f23ee5c729fa2c908f896aa4e1e"
+    },
+    {
+      "g1": "sha256:g1:b5cf42e7cb2efd5b2267a922b3ae01260dda3aae9ed042b97fcda9720baa5377",
+      "questionId": "Q26",
+      "reviewId": "gp2-intermediate-q26-v1",
+      "draftSha256": "b4a60ae9cc2c951eaacfaad104b8cd86db6b3eda0227b65c131c26d3234d29cb",
+      "q1": "sha256:q1:f63805bcb80dfbafac7d4dbf2b52f95ea8c9acfdfd5b0a2a90ec38a650d92298"
+    },
+    {
+      "g1": "sha256:g1:3472873a3c414db40859bb26ddaf5d6266b817fe655c9d5e54f9b66db7dfb0aa",
+      "questionId": "Q33",
+      "reviewId": "gp2-intermediate-q33-v1",
+      "draftSha256": "d4db6146a8fa2191cd296d019f925a9e6eeed7baee45cb04c9b559da58a34a47",
+      "q1": "sha256:q1:8ecba5c6203302ec120128e096ba85b94798d01d08a1b9335debfd20c7c5e521"
+    },
+    {
+      "g1": "sha256:g1:3eac27881f33c58c0bea05c6a05a834c0287bc3bfc0dc6585fff6f5abf2faa46",
+      "questionId": "Q59",
+      "reviewId": "gp2-intermediate-q59-v1",
+      "draftSha256": "030e6095f6253a11c64019e9b7f7bba70748cb19d0042382ae98de3865bfe105",
+      "q1": "sha256:q1:9960556ebecbff7485993dfb158e9bd712cf77eee6ba9f158f0d8513a816c5ca"
+    }
+  ],
+  "waiverDate": "2026-10-18",
+  "source": {
+    "schemaVersion": 1,
+    "examId": "pcao-f-practice-easy-01",
+    "bankVersion": "1.0.0",
+    "difficulty": "intermediate"
+  },
+  "bankSha256": "f2a4f36183f2a30f79b83fc928389178e13151ea77a955819c890caf32992be4",
+  "ledgerSha256": "cdb1d916e13f830766d4eeafb50e828282fa3a7f00bf7643fc4de29bb8ff5daa",
+  "guideVersion": "1.0.0",
+  "matrixSha256": "192a928c7d8a0edd151e71e919ff3b640c29e0bf02ec22725e89868e9f765d00",
+  "advancedBankSha256": "e1a9f7b3f157320ea738a0a06a48327439b2d89902da64137ca03dddc7d2efea"
+}

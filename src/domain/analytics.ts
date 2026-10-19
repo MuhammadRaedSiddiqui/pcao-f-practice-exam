@@ -1,4 +1,4 @@
-export type AnalyticsView = 'start' | 'exam' | 'results' | 'settings' | 'history';
+export type AnalyticsView = 'start' | 'exam' | 'results' | 'settings' | 'history' | 'guided' | 'guided-session';
 export type AnalyticsContext = { view: AnalyticsView; difficulty: 'intermediate' | 'advanced' | 'original' | null };
 export type AnalyticsProperties = Record<string, string | number | boolean | null>;
 export type AnalyticsEvent = 'signup_succeeded' | 'login_succeeded' | 'logout_succeeded' | 'signed_in_activity' |
@@ -11,10 +11,19 @@ export interface AnalyticsSink {
 // Keep raw URLs, auth recovery fragments and question/report contents out of analytics.
 export function scrubAnalyticsProperties(properties: Record<string, unknown>, preserveProjectToken = false): Record<string, unknown> {
   const cleaned = { ...properties };
+  const guidedPath = (value: string) => /(?:^|\/)guided(?:\/|$)/.test(value);
   for (const key of Object.keys(cleaned)) {
     // PostHog requires its public project token on each event. Auth tokens remain excluded.
     if (key === 'token' && preserveProjectToken) continue;
-    if (/email|password|token|authorization|answer|question|explanation|payload/i.test(key)) {
+    if (key.startsWith('$prev_pageview_')) {
+      // SDK page-duration/scroll inference spans a suspended Guided visit. The
+      // app's explicit engagement clock is the only active-time authority.
+      delete cleaned[key];
+    } else if (/pathname/i.test(key) && typeof cleaned[key] === 'string' && guidedPath(cleaned[key] as string)) {
+      delete cleaned[key];
+    } else if (/title/i.test(key) && typeof cleaned[key] === 'string' && /^Guided Practice(?:\s|$)/.test(cleaned[key] as string)) {
+      delete cleaned[key];
+    } else if (/email|password|token|authorization|answer|question|explanation|payload/i.test(key)) {
       delete cleaned[key];
     } else if (key === '$set' || key === '$set_once') {
       const value = cleaned[key];
@@ -22,7 +31,8 @@ export function scrubAnalyticsProperties(properties: Record<string, unknown>, pr
     } else if (/url|referrer/i.test(key) && typeof cleaned[key] === 'string') {
       try {
         const url = new URL(cleaned[key] as string);
-        cleaned[key] = url.origin + url.pathname;
+        if (guidedPath(url.pathname)) delete cleaned[key];
+        else cleaned[key] = url.origin + url.pathname;
       } catch { delete cleaned[key]; }
     }
   }
@@ -87,6 +97,13 @@ export function createAnalytics(sink: AnalyticsSink, environment: string, origin
       page();
     },
     setContext(next: AnalyticsContext) {
+      if (next.view === 'guided' || next.view === 'guided-session') {
+        if (context) flush();
+        context = undefined;
+        lastPage = undefined;
+        lastSample = clock();
+        return;
+      }
       if (context?.view === next.view && context.difficulty === next.difficulty) return;
       flush();
       context = next;

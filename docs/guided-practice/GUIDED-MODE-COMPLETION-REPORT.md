@@ -1,0 +1,26 @@
+# Guided Mode — normal application completion report
+
+19 October 2026 (Asia/Karachi). This is the separately authorized normal-app integration and local release-readiness workstream. Phase 7 remains **COMPLETE / OWNER ACCEPTED**, bound to candidate `118e9257c881023ff52d2e358dfd83b708c304f992e327a935b5f966535bfeba`. Its final acceptance, educational decisions and historical evidence are unchanged. This work does not start Phase 8 or authorize public release.
+
+The existing normal application already supplied navigation, five/ten-item partitions, progressive hints, durable first commitments, separate IndexedDB sessions, protection/recovery and Results Guided Review. Its missing connection was an accepted catalog: ordinary runtime defaults were empty, while port 4258 replaced catalog dependencies using a test transform. The new normal Vite configuration supplies the exact accepted catalog at **build time** in the explicit `guided-local` mode and serves/emits the exact pinned assets. No runtime catalog endpoint, permissive validator or authoring import was introduced.
+
+The execution plan was to verify the accepted identity and capture preservation hashes, connect the normal build path, inspect real browser journeys and fix demonstrated defects, run local build/regression configurations sequentially, then document remaining release decisions. Evidence is isolated under `test-results/guided-mode-20261019-01/`; historical screenshots are never test output destinations.
+
+Only two application files changed: `src/domain/guided/runtime.ts` (explicit configured catalog use) and `src/ui/guided/GuidedSessionPage.tsx` (completion/review focus). Packaging changes are `vite.config.ts`, `build/guidedLocalRelease.ts`, `src/guided-build.d.ts`, `package.json`, `.vercelignore` and the four exact staged assets under `guided-release/`. Five historical authoring test files retain their old baseline with exact new code pins; one Guided source-loss test received the synchronization correction described in QA. The Phase 7 test-preview seam and new normal-app tests/tooling are separately inventoried. Current status/spec/checklist headers and these six reports supply the documentation handoff; the machine-readable inventory lists every path.
+
+## Implemented behavior
+
+- `npm run dev:guided` opens the normal app at `http://127.0.0.1:4260`; `npm run build:guided` builds it under `.localtest/guided-mode/enabled`; `npm run preview:guided` serves that production build at `http://127.0.0.1:4261`.
+- `guided-release/` contains byte-identical copies of the accepted manifest, two releases and two-row approval catalog. The build helper pins all four SHA-256 values. Default builds compile the catalog fallback away, retain an empty production catalog and emit no guidance assets. A browser global cannot populate that catalog.
+- Local enabled mode disables accounts, recovery and telemetry, binds loopback and refuses recognized hosting environments. Its output is outside deployment `dist/`; `.vercelignore` excludes staged release assets. It has no public enablement switch.
+- Native browser inspection found a completion focus defect: a stale review cursor briefly selected another question and moved focus away from the summary. Completed review now defaults directly to the frozen current question; completion/reopening focuses and reveals the summary, while deliberate review navigation focuses the requested question. No stored record is rewritten by this UI correction.
+
+Question banks, accepted wording/hints/reasoning, q1/g1, guide/session schemas, storage/revision/lock rules, source/ownership validation, Mock grading/timer and report/PDF implementation were not changed. Existing authoring preservation checks now retain their historical baseline and use exact new hash pins for only the five authorized code/configuration changes; educational/approval/history checks keep their original pins. The Phase 7 preview transform now only substitutes the catalog import because the normal runtime explicitly passes its catalog to loader/eligibility.
+
+## Verification and handoff
+
+Local normal-app implementation and the specified verification work are complete, with the disclosed timing limitation carried forward: TypeScript/build configurations pass, selected browser suites pass **302/302**, and full units are **837/838** with the unchanged timed-out lifecycle passing in a separate focused run. No clean full-unit-suite or production-readiness claim is made. The remaining failure has been investigated and escalated in the release report; deadlines/security assertions remain unchanged.
+
+See [integration verification](GUIDED-MODE-INTEGRATION-VERIFICATION.md), [browser QA](GUIDED-MODE-BROWSER-QA.md), [content/version integrity](GUIDED-MODE-CONTENT-VERSION-INTEGRITY.md), [release readiness](GUIDED-MODE-RELEASE-READINESS.md) and [owner launch/handoff](GUIDED-MODE-OWNER-HANDOFF.md). These reports distinguish initial failures, final runs, focused reruns and unperformed native/device/host work. The final file inventory is `test-results/guided-mode-20261019-01/work-changes.json`.
+
+No deployment, public enablement, hosted account operation, email, commit or push was performed. No owner walkthrough, native screen-reader, physical-device or learner-effectiveness result is inferred from these checks.

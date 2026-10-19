@@ -82,7 +82,7 @@ for (const viewport of viewports) {
 test('source drawer handles pending and unavailable bank with retry', async ({ page }) => {
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
-  await page.route('**/question-bank.json', async route => { await gate; await route.fulfill({ status: 503, body: 'Unavailable' }); });
+  await page.route('**/*question-bank.json', async route => { await gate; await route.fulfill({ status: 503, body: 'Unavailable' }); });
   await page.goto('/');
   await page.getByRole('button', { name: 'Source courses' }).click();
   const drawer = page.getByRole('dialog', { name: 'Courses used for this mock' });
@@ -90,7 +90,9 @@ test('source drawer handles pending and unavailable bank with retry', async ({ p
   release();
   await expect(drawer.getByRole('alert')).toContainText('Source courses are unavailable');
   await expect(drawer.getByRole('link')).toHaveCount(0);
-  await page.unroute('**/question-bank.json');
+  // Recover from the Intermediate bank while Advanced remains unavailable.
+  await page.unroute('**/*question-bank.json');
+  await page.route('**/question-bank.json', route => route.fulfill({ status: 503 }));
   await drawer.getByRole('button', { name: 'Retry loading' }).click();
   await expect(drawer.getByRole('link')).toHaveCount(10);
   expect(await storage(page)).toEqual({});
@@ -107,7 +109,7 @@ test('insufficient multiple selections remain unanswered after refresh and grade
   await expect(page.locator('.answered-count strong')).toHaveText('0 / 60');
   const before = await storage(page);
   await reloadPage(page);
-  await page.getByRole('button', { name: 'Resume attempt' }).click();
+  await expect(page.getByRole('heading', { name: /^Question \d+ of 60$/ })).toBeVisible();
   await expect(page.getByRole('checkbox').first()).toBeChecked();
   await expect(page.locator('.selection-counter')).toContainText('1 of 2 selected');
   expect(await storage(page)).toEqual(before);
@@ -160,7 +162,7 @@ for (const [correct, score, status] of [[0, 0, 'Failed'], [43, 717, 'Failed'], [
       await page.evaluate(enlarged => { document.body.style.fontSize = enlarged ? '24px' : '16px'; }, viewport.name === 'enlarged');
       await page.screenshot({ path: 'screenshots/practice-passed-' + viewport.name + '.png' });
       await page.locator('.result-cards').screenshot({ path: 'screenshots/practice-score-cards-' + viewport.name + '.png' });
-      await page.getByRole('button', { name: 'Attempt history', exact: true }).first().click();
+      await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
       await expect(page.locator('.history-row .practice-status')).toHaveText('Passed');
       await page.locator('.history-list').screenshot({ path: 'screenshots/practice-history-' + viewport.name + '.png' });
       await expect(page.getByRole('button', { name: 'Open report' })).toBeInViewport();
@@ -168,6 +170,8 @@ for (const [correct, score, status] of [[0, 0, 'Failed'], [43, 717, 'Failed'], [
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     }
     await reloadPage(page);
+    await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
+    await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
     await page.getByRole('button', { name: 'Open report' }).click();
     await expect(page.locator('.result-number')).toHaveText(score + ' / 1000');
     expect(await storage(page)).toEqual(original);
@@ -183,9 +187,10 @@ test('touch source drawer preserves an unfinished attempt and original deadline'
   await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
   await page.getByRole('button', { name: 'Start Exam', exact: true }).tap();
   await page.getByRole('radio').first().check();
-  await page.getByRole('button', { name: 'Attempt history', exact: true }).tap();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).tap();
   await page.getByRole('button', { name: 'Go to attempt history' }).tap();
   const before = await storage(page);
+  await page.getByRole('banner').getByRole('link', { name: 'Home', exact: true }).tap();
   await page.getByRole('button', { name: 'Source courses' }).tap();
   const drawer = page.getByRole('dialog', { name: 'Courses used for this mock' });
   await drawer.getByRole('link').last().scrollIntoViewIfNeeded();

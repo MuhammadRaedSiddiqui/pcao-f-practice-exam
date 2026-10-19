@@ -75,6 +75,8 @@ test('known synthetic results have independent totals, exclusive filters and exa
   await page.getByRole('button', { name: 'All (60)', exact: true }).click();
   await expect(page.locator('.review-item')).toHaveCount(60);
   await page.reload();
+  await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await page.getByRole('button', { name: 'Open report' }).click();
   await expect(page.locator('.result-counts dd')).toHaveText(['20', '8', '32']);
   await expect(page.locator('.review-item[open]')).toHaveCount(0);
@@ -112,7 +114,7 @@ test('new validated data powers a fresh full flow while the original report stay
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await page.locator('input[value="B"]').check();
   await page.reload();
-  await page.getByRole('button', { name: 'Resume attempt' }).click();
+  await expect(page.getByRole('heading', { name: /^Question \d+ of 60$/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Question 2 of 60' })).toBeFocused();
   await expect(page.locator('input[value="B"]')).toBeChecked();
   await page.getByRole('button', { name: 'Review & submit' }).click();
@@ -130,7 +132,7 @@ test('new validated data powers a fresh full flow while the original report stay
   expect(saved).toHaveLength(2);
   expect(saved[0].snapshot).toEqual(latest);
   expect(saved[1]).toEqual(old);
-  await page.getByRole('button', { name: 'Attempt history', exact: true }).first().click();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Open report' })).toHaveCount(2);
   await page.getByRole('button', { name: 'Open report' }).nth(1).click();
   await expect(page.locator('.result-number')).toHaveText('333 / 1000');

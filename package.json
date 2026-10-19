@@ -4,14 +4,20 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "dev:guided": "vite --host 127.0.0.1 --port 4260 --mode guided-local --configLoader runner",
+    "build:guided": "vite build --mode guided-local --configLoader runner",
+    "preview:guided": "vite preview --host 127.0.0.1 --port 4261 --mode guided-local --configLoader runner",
     "dev": "vite --host 127.0.0.1 --configLoader runner",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --configLoader runner",
     "test:browser": "playwright test",
-    "build": "vite build --configLoader runner",
+    "build": "node scripts/build-vercel.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "test:account": "playwright test --config playwright.account.config.ts",
-    "test:analytics": "playwright test --config playwright.analytics.config.ts"
+    "test:analytics": "playwright test --config playwright.analytics.config.ts",
+    "build:guided:release": "node scripts/build-guided-production.mjs local",
+    "build:guided:hosted": "node scripts/build-guided-production.mjs hosted",
+    "prepare:guided:upload": "node scripts/prepare-guided-upload.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.117.3",

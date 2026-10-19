@@ -1,0 +1,17 @@
+{
+  ".vercelignore": "9c590f11ddfd5ba53845b7ccea7e4452d72931757f15fa2bea8d27eefde3f057",
+  "package.json": "0a06d9c8ea83293c0e2fd5d460ea3ee8d872adddfd563fb3de15b7740f8024d1",
+  "src/domain/guided/runtime.ts": "532fcbe1ba961e28afadebaa9fb58afc55d84ff9c76863504d8ff5d03636f48f",
+  "vite.config.ts": "51a245008e20a1fb2ee8a36187fb3dded5b2d0b0a46f5ffc2e5fd05d07a57a90",
+  "src/ui/guided/GuidedSessionPage.tsx": "312291de81ccfb0ae6dbe0193df8ca3fdcfae3d8e59146f1305affd93ecee684",
+  "vercel.json": "6d5c6f39b909c3a9a0250fc8ebdee38525663137642b146c703fbd2b29c49d63",
+  "src/hooks/useAccountHistory.ts": "7484471dcd115110c12e0be520e594238e74e6b6220249e67e54953055e8d932",
+  "src/services/accountRepository.ts": "5969a35f0f43b7069440402570a51c0fa87d937fee459486725ac4fe2acfefba",
+  "src/ui/AccountHeader.tsx": "efd91e80810b97eeca970b9db64f0863743797d69d3ff82b82a6cdeab1d2f1eb",
+  "src/ui/AccountPanel.tsx": "638dea234631f9fdb182c4020454ffcbf48c164dd74f7d977763f9d69c068e08",
+  "src/ui/AccountSettingsPage.tsx": "775468c95a6b7ba2a1e52b720a73e91954094f2a7d0e2ec6a1b40c77d8f03698",
+  "src/domain/attemptModel.ts": "9a4059b337f1c472c24003e5fe34e89ada43a61cf3d79fc394ca910a67909db4",
+  "src/domain/bankValidation.ts": "19a6c8d76346cb45f0c18d3e83e58bcc187f46c63df426c21a24ca5034f86e8a",
+  "tests/accountSettings.test.tsx": "063d339e32a2525a0e356bd97050206a17ff3beafc9310d48da9f5376d1abd37",
+  "tests/account-browser/account.spec.ts": "a96eed21462d772acef885cc4ecd3f1316b4e65dd86588e6ae92b1ed37ea4077"
+}

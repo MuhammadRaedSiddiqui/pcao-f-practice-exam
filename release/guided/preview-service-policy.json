@@ -1,0 +1,26 @@
+{
+  "status": "owner-approved",
+  "projectId": "prj_xORMQWCLTT939SudblG9TjeIGJqL",
+  "gitBranch": "feature/guided-mode-vercel-preview",
+  "environment": "preview",
+  "access": "existing-vercel-authentication-required",
+  "variables": {
+    "GUIDED_RELEASE_ORIGIN": "https://pcao-f-practice-exam-one.vercel.app",
+    "VITE_ACCOUNT_HISTORY_ENABLED": "false",
+    "VITE_PASSWORD_RECOVERY_ENABLED": "false",
+    "VITE_POSTHOG_ENABLED": "false",
+    "VITE_ANALYTICS_ENVIRONMENT": "guided-protected-preview"
+  },
+  "serviceEndpointsAndKeys": "absent; do not copy Production variables",
+  "data": "synthetic browser-local sessions only; no production user data",
+  "buildGuardRequired": "enable accepted guidance only for the named branch in the verified project's Preview environment; ordinary Production builds remain disabled with an empty catalog",
+  "systemVariablesRequired": [
+    "VERCEL",
+    "VERCEL_ENV",
+    "VERCEL_PROJECT_ID",
+    "VERCEL_GIT_COMMIT_REF"
+  ],
+  "productionSettingsChanges": false,
+  "reasonForDecision": "Explicit owner amendment of earlier service-preserving preflight, Preview only.",
+  "authority": "Owner approved guest-only Preview policy in this chat, 19 October 2026"
+}

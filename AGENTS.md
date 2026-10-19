@@ -1,3 +1,5 @@
+**CURRENT — Protected Guided Preview branch — 19 October 2026:** The owner authorizes `feature/guided-mode-vercel-preview` commit/push and automatic protected Vercel Preview verification only. The separate owner-approved guest-only Preview policy disables accounts, recovery and analytics. Production branch `main`, its deployment/services and the default empty Guided catalog remain unchanged. No Production push/merge/deploy/enablement or Phase 8 is authorized. Phase 7 remains COMPLETE / OWNER ACCEPTED. See [the Preview deployment report](docs/guided-practice/GUIDED-MODE-VERCEL-PREVIEW-DEPLOYMENT-REPORT.md) for actual execution status; do not infer hosted success from local evidence.
+
 # Repository Guidelines
 
 ## Project Structure & Module Organization

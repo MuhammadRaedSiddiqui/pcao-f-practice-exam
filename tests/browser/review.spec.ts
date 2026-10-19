@@ -122,6 +122,8 @@ test('cancelled confirmation preserves selections; confirmed double clicks save 
   expect(submitted.attempt.result).toMatchObject({ correct: 0, total: 60, percentage: 0 });
   expect(await page.locator('body').getAttribute('data-submitted-writes')).toBe('1');
   await page.reload();
+  await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await page.getByRole('button', { name: 'Open report' }).click();
   expect(await stored(page)).toEqual(submitted);
 });
