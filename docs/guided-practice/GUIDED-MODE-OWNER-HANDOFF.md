@@ -1,5 +1,7 @@
 # Guided Mode — owner handoff
 
+**Protected Preview update — 19 October 2026:** [Open the authenticated Preview](https://pcao-f-practice-exam-git-feature-e3fbe4-muhammad-raeds-projects.vercel.app/guided). Commit `2acad5c5346d82a1cc2562331cf9fed653cf6093` automatically deployed as Preview `dpl_PMTayBa6hfU8Mkqy4KEWDFtBYTGt`. Core hosted Guided/Mock/Results flows and both exact hosted assets were verified; [the deployment report](GUIDED-MODE-VERCEL-PREVIEW-DEPLOYMENT-REPORT.md) identifies the mandatory hosted gaps, including completed PDF download and controlled legacy replay. Local final checks pass 864 units and 251 sequential browser cases. Accounts/recovery/analytics are disabled by the separately approved Preview policy. Production is unchanged and remains a separate owner decision after the remaining release gates. The prior local handoff below is preserved history.
+
 19 October 2026. Phase 7 remains closed; this handoff concerns the subsequent normal-app local integration. Start with the [completion report](GUIDED-MODE-COMPLETION-REPORT.md) and [exact verification results](GUIDED-MODE-INTEGRATION-VERIFICATION.md).
 
 ## Launch the normal app locally

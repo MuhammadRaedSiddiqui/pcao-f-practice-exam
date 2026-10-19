@@ -1,6 +1,6 @@
 # Guided Mode — protected Vercel Preview deployment
 
-19 October 2026, Asia/Karachi. **In progress; not yet pushed or deployed.** This report will record actual results before completion. Phase 7 remains COMPLETE / OWNER ACCEPTED; Production enablement and Phase 8 remain outside this authorization.
+19 October 2026, Asia/Karachi. **Feature branch pushed; automatic protected Preview Ready; core hosted journeys verified. Mandatory hosted verification remains incomplete** for the explicit gaps below. Phase 7 remains COMPLETE / OWNER ACCEPTED; Production enablement and Phase 8 remain outside this authorization.
 
 ## Authorization and release identity
 
@@ -41,7 +41,9 @@ Vercel rejected an attempted branch-scoped non-secret origin variable with `bran
 
 Unrelated uncommitted automatic-account-backup behavior is excluded. Original committed preferences, account UI and signed-in attempt binding remain intact; only the Guided read-only source port and optional request cancellation are added to the relevant account modules. Original checkout screenshots and other dirty files are untouched. Exact checkout line-ending rules preserve approval/source bytes across platforms without committing unrelated line-ending-only changes.
 
-Necessary source, pinned release inputs, build configuration, tests and documentation will be explicitly staged and reviewed. Local env files, credentials, personal profiles/storage, `ngrok.exe`, node_modules, ZIPs, raw logs/screenshots and historical generated evidence stay excluded. Historical unit-preservation checks require supplemental excluded local archives; this is distinct from the release build, which must succeed from clean Git source without those archives.
+The source commit contains 272 explicitly reviewed files, including the preceding uncommitted Guided phases: runtime under `src/domain/guided`, `src/hooks/useGuidedPractice.ts`, `src/ui/guided`, App/Results wiring, the narrow account source port, immutable `guided-release` inputs, `build/` and `scripts/` release tooling, `release/guided` manifests/policy, Vite/Vercel configuration, checkout byte rules, tests and phase/release documentation. The [exact committed file inventory and diff](https://github.com/MuhammadRaedSiddiqui/pcao-f-practice-exam/commit/2acad5c5346d82a1cc2562331cf9fed653cf6093) is authoritative; excluded local `staged-audit.json` records the tree `f9ef9cf7e0a069a665abd82058a0ca27bc8b628c`. All 76 manifest source inputs match their pinned bytes. The staged path/credential-pattern scan has zero findings; it does not prove absence of every possible unknown credential.
+
+Local env files, credentials, personal profiles/storage, `ngrok.exe`, node_modules, ZIPs, raw logs/screenshots and historical generated evidence stay excluded. Historical unit-preservation checks require supplemental excluded local archives; this is distinct from the release build, which succeeded from clean Git source without those archives. `git diff --check` reports retained historical Markdown hard-break/trailing-space and mixed-ending lines; those exact preservation-bound bytes were not normalized to suppress warnings. Unstaged checkout-only CRLF refreshes in package-lock/test configuration are not application edits or additional committed changes.
 
 ## Executed checks and failures
 
@@ -57,9 +59,48 @@ Preparation failures are retained under the new excluded `test-results/guided-ve
 
 ## Deployment, hosted QA and rollback
 
-Feature commit SHA, remote branch URL, Preview deployment ID and Preview URL: **pending**. No hosted success is claimed before observation.
+Source commit: **`2acad5c5346d82a1cc2562331cf9fed653cf6093`**, `feat(guided): integrate approved guided mode for Vercel preview`.
 
-Hosted matrix pending: authenticated root/deep routes and reload, assets/status/MIME/cache/hash, missing endpoints, current five/ten-question sessions, single/two/three responses, staged hints, durable locking/feedback, navigation/resume/completion/review, long tables/tree, mobile/desktop keyboard/focus, invalid-session recovery, controlled old/current frozen fixtures and revocation rejection, Mock blocking/isolation, report/PDF preservation, and actual hosted PDF download. No private session storage is transferred across origins.
+Remote branch: [feature/guided-mode-vercel-preview](https://github.com/MuhammadRaedSiddiqui/pcao-f-practice-exam/tree/feature/guided-mode-vercel-preview). Only `HEAD:refs/heads/feature/guided-mode-vercel-preview` was pushed, normally, without force. No PR or merge was created.
+
+Observed automatic Git deployment: **`dpl_PMTayBa6hfU8Mkqy4KEWDFtBYTGt`**, source `git`, expected project/branch/full SHA, **READY**. API target is null (non-Production Preview), while existing main deployments explicitly show target `production`. Build logs independently identify the feature branch, `npm ci`, `npm run build`, `Vercel build policy: guided-preview` and `dist` output. Linux installed 219 platform-specific packages, audited 220 with zero reported vulnerabilities; Windows installed 215. Existing chunk-size/dynamic-import and npm install-script warnings remain in the log. There was no failed remote build or Production settings correction.
+
+Immutable deployment URL: [initial Preview](https://pcao-f-practice-exam-qxl1bd9a1-muhammad-raeds-projects.vercel.app). Stable branch alias used for synthetic QA: [protected Guided Preview](https://pcao-f-practice-exam-git-feature-e3fbe4-muhammad-raeds-projects.vercel.app/guided). Anonymous HTTP to the immutable deployment returns **302 to Vercel SSO**, `Cache-Control: no-store`, and `X-Robots-Tag: noindex`; authenticated built-in browser access succeeds. No bypass secret or access exception was created. The installed `vercel curl` implementation can create a project-wide bypass token, so it was not used. A read-only deployment-file-tree API request returned 404; that does not mean the hosted immutable files are absent.
+
+### Actual built-in-browser results
+
+| Check | Observed result |
+| --- | --- |
+| Root, direct `/guided`, reload and session deep link | App loads; sixty approved questions available; five-question saved commitment survives deep-route reload |
+| Five-question Set 1 | Completed all five; progressive Hint 1/2/3; single and two-response items; saved/locked feedback; completed read-only review; no feedback before Check |
+| Ten-question Set 3 | Completed all ten; one/two/three-response items and tables; two selections disable Check for a three-response item; exactly three enable it and disable extra choices |
+| Keyboard and focus | Space selects; Enter commits; focus moves to saved-feedback heading and then to completion heading |
+| Current release selection | New Set 1 includes Q1 and all twelve five-question sets are offered, consistent with the sixty-entry 1.1.0 selection rather than the ten-entry historical set |
+| Responsive artifacts | Q21/Q26 tables and Q47 fenced tree rendered; 375×812 and 1280×900 checks show no page-width overflow (document widths 360 and 1265 respectively); viewport reset afterward |
+| Invalid session | Invalid address displays session-unavailable recovery; a valid absent UUID displays safe Retry/return recovery with no unsaved hint or feedback |
+| Hosted immutable JSON | Authenticated browser displays real JSON PRE documents. Hash of exact UTF-8 PRE text matches **both approved asset SHA-256 values** above: current 256,992 bytes/60 questions and historical 38,698 bytes/10 questions. Both documents report content type `application/json`. These are hosted document-text hashes, not a captured raw-response/header trace |
+| Missing immutable asset | `/guided/deliberately-missing.json` displays Vercel **404 NOT_FOUND**, rather than the app shell |
+| Excluded paths | `/tests/guided-browser/`, `/guided/catalog.json` and `/release/guided/vercel-preview-release-manifest.json` each show Vercel **404 NOT_FOUND** |
+| Original Mock | Synthetic Intermediate timed attempt starts, accepts an answer, shows no hints; another same-origin tab is blocked from Guided while Mock is active; submission releases that block |
+| Original Results / Guided Review | Mock remains 17/1000, 1 correct and 59 unanswered. Active-page Guided Review reports 59 eligible/59 matched/0 unavailable; creates a fresh 59-item retry with zero commitments; return restores the unchanged original results |
+| Services | Account controls absent; compiled guest-only service policy selected by actual remote build. No real account, email, analytics or cloud data was used |
+| PDF | Hosted PDF module finishes loading and Export control enables. Click attempted with documented download observation; tool stalled/reset without returning a file path. **Actual completed hosted PDF download remains unverified** |
+
+Saved synthetic session IDs: five `b1f74b2a-f9bd-4cf5-bca2-c507f8ebd636`; ten `5362223a-3d1b-4da2-a873-51f7d8ca06de`; tree `4f931d5a-baa2-45b3-a6cb-29e30c4df259`; post-exam retry `df953428-daa4-445c-a572-a3ec55810abf`. All were created by UI on the Preview origin. No local browser storage was imported across origins.
+
+Built-in browser evidence and six initial screenshots are under excluded `test-results/guided-vercel-preview-20261019-01/`: `hosted-saved-feedback.png`, `hosted-completed-review.png`, `hosted-table.png`, `hosted-mobile-tree.png`, `hosted-desktop-tree.png`, `hosted-mock-block.png`, plus later retry capture and the two hosted JSON check records. Browser tool transcripts retain exact actions and observations. Some immediate screenshot/AX captures show transient rendering; settled text observations above are separate evidence. `preview-first-metadata.json`, `vercel-build-first.log` and `production-after-first-preview.json` preserve sanitized platform results. The report does not manufacture a numerical hosted test-suite pass count from interactive checks.
+
+### Failures, limitations and remaining mandatory hosted work
+
+The first native-select Playwright operation timed out; native `setValue` selected the displayed option successfully. An attempt to select a fourth checkbox was correctly rejected because it was disabled. A repeated-action helper initially parsed an accessibility diff instead of a full state and stopped without mutation; subsequent reads use full state. Native same-tab navigation during an active Mock was aborted; a new same-origin tab demonstrated blocking without discarding the timed attempt. In a background page, Guided Review rejected access after visibility invalidation; an active visible page passed the same source check and created the fresh retry. No visibility guard was bypassed or weakened.
+
+The documented download observer stalled for approximately 767 seconds despite its configured 60-second wait, then reset the browser tool. A later bounded observer also timed out/reset. Browser state recovered without app/storage changes, but no completed PDF artifact was obtained. This is an unresolved observation/tool limitation, not proof of successful PDF export or a diagnosed application defect. Local 139/139 guest regression includes PDF checks and remains separate evidence.
+
+**Do not mark the complete requested hosted matrix passed.** Remaining mandatory items are: captured actual HTTP 200/cache headers for both JSON paths; controlled hosted old 1.0.0 frozen-session reader/resume and no-migration replay; controlled missing/revoked-content saved-session rejection; actual failed durable-write/no-feedback behavior on host; and completed actual hosted PDF download. Signed-in ownership behavior would require a separately approved synthetic-service policy because accounts are intentionally disabled here. No actual-host compatible rollback rehearsal was selected or performed. Current/historical asset bytes are verified on host, but this alone does not execute the historical reader. These controlled cases passed locally where specified by the 251 browser checks; they are not relabeled hosted. The built-in browser exposes DOM reads but no authenticated response/header capture or controlled IndexedDB-fixture operation. No fixture API or storage-injection escape hatch was published to obtain the missing results.
+
+Production identity was re-read after hosted QA and remains `dpl_5K9V9V8HiRyciEuUyAU7oWYbvFpj` at `8820340ea82920e6e512d0938b6f754c8f4e7916`, branch `main`, with the same protection policy. No new Production deployment was observed.
+
+A final documentation-only commit on this same branch records these results. Its resulting automatic Preview must be checked against that final SHA. The final local delivery copy may append the observed final SHA/deployment identity after that check, avoiding a self-referential commit/deployment loop.
 
 Compatible rollback requires the same compatible reader, both exact maps/assets and banks. Empty catalog/feature-off blocks saved-session resume and is suspension, not seamless rollback. No actual hosted rollback is claimed yet.
 

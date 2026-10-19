@@ -1,5 +1,7 @@
 # Guided Mode — local release readiness and public-release obligations
 
+**19 October 2026 — separate protected Preview authorization executed:** feature commit `2acad5c5346d82a1cc2562331cf9fed653cf6093` was pushed only to `feature/guided-mode-vercel-preview`. Automatic Vercel Preview `dpl_PMTayBa6hfU8Mkqy4KEWDFtBYTGt` is Ready with Vercel authentication retained and the owner-approved guest-only service policy. Built-in browser verified core five/ten-question journeys, both exact hosted JSON hashes, Mock blocking and Results/Guided Review isolation. Full hosted acceptance remains incomplete: PDF download completion, actual cache/status headers and controlled legacy/revoked/missing-content replay remain open. See the [actual Preview report](GUIDED-MODE-VERCEL-PREVIEW-DEPLOYMENT-REPORT.md). Production remains on the previous main deployment with Guided disabled; Phase 7 acceptance and all historical results below remain unchanged. No Production acceptance, publication, deployment or Phase 8 is authorized.
+
 19 October 2026. Normal-app **local integration** is the authorized delivery boundary. Phase 7 stays closed. Default/public configuration remains disabled with an empty catalog; no deployment or public enablement was performed.
 
 ## Concrete build/configuration boundary
