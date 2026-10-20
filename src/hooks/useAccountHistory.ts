@@ -353,7 +353,7 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
     setSyncTick(value => value + 1);
   }
 
-  async function download(row: CloudReport, keepCopy = false): Promise<Attempt> {
+  async function download(row: CloudReport, keepCopy = false, signal?: AbortSignal): Promise<Attempt> {
     const id = owner.current; const version = epoch.current;
     if (!repository || !id || row.user_id !== id) throw new ArchiveError('Sign in to the account that owns this report.', 'auth');
     let attempt: Attempt;
@@ -362,7 +362,7 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
       if (!cached) throw new ArchiveError('This report has no saved device copy. Connect to open it.');
       attempt = await validateCloudPayload(row, cached.payload, id);
     } else {
-      attempt = (await repository.download(id, row.report_id)).attempt;
+      attempt = (await repository.download(id, row.report_id, signal)).attempt;
     }
     if (!active(id, version)) throw new ArchiveError('The account changed before the report opened.', 'auth');
     if (keepCopy) {
@@ -371,6 +371,39 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
       if (!active(id, version)) { await archiveStore.removeCopy(id, row.attempt_id); throw new ArchiveError('The account changed.', 'auth'); }
     }
     return attempt;
+  }
+
+  // Read-only Guided source port. Reuse owner-authenticated receipts/downloads or
+  // validated trusted copies; never enqueue, claim, cache or rewrite a report.
+  async function guidedSource(attemptId: string) {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<null>(resolve => { timer = setTimeout(() => { controller.abort(); resolve(null); }, 15000); });
+    try { return await Promise.race([readGuidedSource(attemptId, controller.signal), timeout]); }
+    finally { clearTimeout(timer); }
+  }
+  async function readGuidedSource(attemptId: string, signal: AbortSignal) {
+    const id = owner.current; const version = epoch.current;
+    if (!repository || !id) return null;
+    const marker = storage.getItem('pcao-f:attempt-owner:v1:' + attemptId);
+    const ownership = readOwnership(storage, attemptId);
+    if (ownership && (ownership.userId !== id || ownership.state === 'deleted')) return null;
+    let attempt: Attempt;
+    if (navigator.onLine) {
+      const row = await repository.receipt(id, attemptId, signal);
+      if (!row || row.user_id !== id) return null;
+      if (row.deleted_at) return active(id, version) && !signal.aborted ? { deleted: true as const, ownerId: id,
+        fresh: () => active(id, version) && !signal.aborted } : null;
+      attempt = await download(row, false, signal);
+    } else {
+      const copy = await archiveStore.copy(id, attemptId);
+      const row = copy?.metadata ? parseCloudMetadata(copy.metadata) : null;
+      if (!row || row.attempt_id !== attemptId || row.deleted_at) return null;
+      attempt = await validateCloudPayload(row, copy!.payload, id);
+    }
+    if (signal.aborted || !active(id, version)) return null;
+    return { attempt, fresh: () => active(id, version) &&
+      !signal.aborted && storage.getItem('pcao-f:attempt-owner:v1:' + attemptId) === marker };
   }
 
   async function deleteReport(row: CloudReport) {
@@ -447,7 +480,7 @@ export function useAccountHistory(storage: AttemptStorage, history: Attempt[], r
 
   return {
     available: Boolean(client), session, userId, authLoading, enabled, rows, jobs, loading, more, error, notice, backingUp, recovery, recoveryError, setRecoveryError, recoveryEnabled: Boolean(client) && passwordRecoveryEnabled,
-    authenticate, signOut, setAutomatic, bindNewAttempt, backUpReport, retry, cancelBackup, download, deleteReport, removeDevice, deleteAccount,
+    authenticate, signOut, setAutomatic, bindNewAttempt, backUpReport, retry, cancelBackup, download, guidedSource, deleteReport, removeDevice, deleteAccount,
     requestRecovery, updatePassword, loadMore, setError, setNotice,
     canView: (attemptId: string) => visibleTo(storage, attemptId, owner.current),
     currentOwner: () => owner.current,

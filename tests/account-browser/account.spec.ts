@@ -8,7 +8,18 @@ async function signIn(page:Page,email='alice@example.test',remember=false) {
   await dialog.getByLabel('Password',{exact:true}).fill('synthetic-password');
   if(remember)await dialog.getByLabel('Keep me signed in on this device').check();
   await dialog.getByRole('button',{name:'Sign in',exact:true}).click();
-  await expect(page.getByRole('heading',{name:'Your account',exact:true})).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link',{name:'Account settings',exact:true})).toBeVisible();
+}
+async function settings(page: Page) {
+  await page.getByRole('banner').getByRole('link', { name: 'Account settings', exact: true }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page.getByRole('heading', { name: 'Account settings', exact: true })).toBeVisible();
+}
+async function signOut(page: Page) {
+  await settings(page);
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/history$/);
 }
 async function seedReport(page:Page,id='synthetic-account-report') {
   const report=completedFixture(id);
@@ -28,23 +39,22 @@ test('signup provides immediate access using only email/password, and signout hi
   await dialog.getByLabel('Email',{exact:true}).fill('new@example.test');
   await dialog.getByLabel('Password',{exact:true}).fill('synthetic-password');
   await dialog.getByRole('button',{name:'Create account',exact:true}).click();
-  await expect(page.getByRole('heading',{name:'Your account',exact:true})).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link',{name:'Account settings',exact:true})).toBeVisible();
   expect(server.requests.filter(path=>/verify|otp|resend/.test(path))).toHaveLength(0);
   expect(server.rows).toHaveLength(0);
   expect(server.requests.filter(path=>path.endsWith('/backup-report'))).toHaveLength(0);
-  await expect(page.getByText('No account reports yet. Import device history or back up a completed exam.')).toBeVisible();
+  await expect(page.getByText('No account reports yet. Completed reports will appear here after backup.')).toBeVisible();
   await expect(page.getByRole('dialog',{name:'Import device history'})).toHaveCount(0);
-  await page.getByRole('button',{name:'Sign out',exact:true}).click();
+  await signOut(page);
   await expect(page.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();
 });
 
-test('explicit import preserves local bytes, backs up once and recovers on a fresh device',async({page,context,browser})=>{
+test('individual backup preserves local bytes, backs up once and recovers on a fresh device',async({page,context,browser})=>{
   const server=mockAccountServer();await server.attach(context);const attempt=await seedReport(page);
   await page.goto('/');const before=await page.evaluate(id=>localStorage.getItem('pcao-f:attempt:v1:'+id),attempt.id);
   await signIn(page);
   expect(server.rows).toHaveLength(0);
-  await page.getByRole('button',{name:'Import device history'}).click();
-  await page.getByRole('dialog',{name:'Import device history'}).getByRole('button',{name:'Import selected reports'}).click();
+  await page.getByRole('button',{name:'Back up report',exact:true}).click();
   await expect(page.getByText('Backed up',{exact:true})).toBeVisible({timeout:20000});
   expect(server.rows).toHaveLength(1);
   expect(await page.evaluate(id=>localStorage.getItem('pcao-f:attempt:v1:'+id),attempt.id)).toBe(before);
@@ -60,7 +70,10 @@ test('explicit import preserves local bytes, backs up once and recovers on a fre
 
 test('automatic backup waits for successful offline completion, then uploads after reconnection',async({page,context})=>{
   const server=mockAccountServer();await server.attach(context);await page.goto('/');await signIn(page,'alice@example.test',true);
+  await settings(page);
   await page.getByLabel('Automatically back up new exams after completion').check();
+  await expect.poll(() => server.preferences.get(userA)).toBe(true);
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await page.getByRole('button',{name:'Start exam',exact:true}).click();
   await page.getByRole('button',{name:'Start Exam',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Question 1 of 60',exact:true})).toBeVisible();
@@ -79,7 +92,7 @@ test('signing into another account cannot display or upload owned device reports
   const server=mockAccountServer();await server.attach(context);await seedReport(page);await page.goto('/');await signIn(page);
   await page.getByRole('button',{name:'Back up report',exact:true}).click();
   await expect(page.getByText('Backed up',{exact:true})).toBeVisible({timeout:20000});
-  await page.getByRole('button',{name:'Sign out',exact:true}).click();
+  await signOut(page);
   await expect(page.getByRole('button',{name:'Open report',exact:true})).toHaveCount(0);
   await signIn(page,'bob@example.test');
   await expect(page.getByRole('button',{name:'Open report',exact:true})).toHaveCount(0);
@@ -104,14 +117,21 @@ test('deletion keeps the device original and cannot resurrect after archive book
   expect(server.rows.filter(row=>row.user_id===userA&&row.deleted_at===null)).toHaveLength(0);
 });
 
-test('JSON export contains complete reports and device-copy removal requires a verified backup',async({page,context})=>{
-  const server=mockAccountServer();await server.attach(context);await seedReport(page);await page.goto('/');await signIn(page);
+test('individual PDF and full backup preserve reports; device removal requires a verified backup',async({page,context})=>{
+  const server=mockAccountServer();await server.attach(context);const report=await seedReport(page);await page.goto('/');await signIn(page);
+  await expect(page.getByRole('button',{name:'Remove device copy',exact:true})).toHaveCount(0);
   await page.getByRole('button',{name:'Back up report',exact:true}).click();
   await expect(page.getByText('Backed up',{exact:true})).toBeVisible({timeout:20000});
+  expect(server.rows[0].payload).toEqual(report);
+  await page.getByRole('button',{name:'Open report',exact:true}).click();
   const download=page.waitForEvent('download');
-  await page.getByRole('button',{name:'Export account history (JSON)'}).click();
+  await expect(page.getByRole('button',{name:'Export account history (JSON)'})).toHaveCount(0);
+  await page.getByRole('button',{name:'Export report (PDF)'}).click();
   const file=await download;const stream=await file.createReadStream();const chunks:Buffer[]=[];for await(const part of stream!)chunks.push(part);
-  const exported=JSON.parse(Buffer.concat(chunks).toString());expect(exported.reports).toHaveLength(1);expect(exported.reports[0].attempt.snapshot.questions).toHaveLength(60);
+  expect(Buffer.concat(chunks).subarray(0,5).toString()).toBe('%PDF-');
+  expect(file.suggestedFilename()).toMatch(/\.pdf$/);
+  expect(await page.evaluate(id=>JSON.parse(localStorage.getItem('pcao-f:attempt:v1:'+id)!),report.id)).toEqual(report);
+  await page.getByRole('banner').getByRole('link',{name:'Attempt history',exact:true}).click();
   await page.getByRole('button',{name:'Remove device copy',exact:true}).click();
   await page.getByRole('dialog',{name:'Remove device copy?'}).getByRole('button',{name:'Remove device copy',exact:true}).click();
   await expect(page.getByRole('button',{name:'Open account report'})).toBeVisible();
@@ -124,14 +144,19 @@ test('fresh account report is read-only across storage events and signout closes
   await expect(page.getByRole('heading',{name:'Your results',exact:true})).toBeVisible();
   await page.evaluate(()=>window.dispatchEvent(new StorageEvent('storage',{key:'pcao-f:attempt-ids:v1'})));
   await expect(page.getByRole('heading',{name:'Your results',exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'Sign out',exact:true}).click();
+  await signOut(page);
+  await page.goBack();
+  await page.reload();
+  await expect(page.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();
   await expect(page.getByRole('heading',{name:'Your results',exact:true})).toHaveCount(0);
+  await expect(page.getByRole('button',{name:'Open account report'})).toHaveCount(0);
 });
 
 test('account deletion reauthenticates with a password and preserves unrelated guest history',async({page,context})=>{
   const server=mockAccountServer();server.rows.push(await cloudRow(userA,completedFixture('account-delete-a')),await cloudRow(userB,completedFixture('account-delete-b')));await server.attach(context);
   const guest=await seedReport(page,'retained-unowned-guest');await page.goto('/');await signIn(page);
   const before=await page.evaluate(id=>localStorage.getItem('pcao-f:attempt:v1:'+id),guest.id);
+  await settings(page);
   await page.getByRole('button',{name:'Delete account',exact:true}).click();const dialog=page.getByRole('dialog',{name:'Delete your account?'});
   await dialog.getByLabel('Current password').fill('wrong-password');
   await dialog.getByLabel('I understand that my account reports will be deleted.').check();
@@ -185,7 +210,7 @@ test('late backup responses cannot appear under a newly signed-in account',async
   const server=mockAccountServer();server.delayBackups(2000);await server.attach(context);await seedReport(page);await page.goto('/');await signIn(page);
   await page.getByRole('button',{name:'Back up report',exact:true}).click();
   await expect.poll(()=>server.requests.filter(path=>path.endsWith('/backup-report')).length).toBe(1);
-  await page.getByRole('button',{name:'Sign out',exact:true}).click();
+  await signOut(page);
   await signIn(page,'bob@example.test');
   await expect.poll(()=>server.rows.length).toBe(1);
   expect(server.rows[0].user_id).toBe(userA);
@@ -206,10 +231,12 @@ test('history pagination includes equal-time reports without missing or duplicat
 test('a downloaded trusted-device report remains available when account downloads fail',async({page,context})=>{
   const server=mockAccountServer();server.rows.push(await cloudRow(userA,completedFixture('offline-copy')));await server.attach(context);
   await page.goto('/');await signIn(page);
+  await settings(page);
   await page.getByLabel('Keep opened account reports on this trusted device for offline access').check();
+  await page.getByRole('banner').getByRole('link',{name:'Attempt history',exact:true}).click();
   await page.getByRole('button',{name:'Open account report'}).click();
   await expect(page.getByRole('heading',{name:'Your results',exact:true})).toBeVisible();
-  await page.getByRole('banner').getByRole('button',{name:'Attempt history'}).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await context.setOffline(true);
   await page.getByRole('button',{name:'Open account report'}).click();
   await expect(page.getByRole('heading',{name:'Your results',exact:true})).toBeVisible();
@@ -236,10 +263,10 @@ test('signed-in account history fits all six layouts and preserves touch targets
   }
 });
 
-test('two signed-in tabs coordinate the same import without duplicate backups',async({page,context})=>{
+test('two signed-in tabs coordinate the same individual backup without duplicate backups',async({page,context})=>{
   const server=mockAccountServer();await server.attach(context);await seedReport(page);await page.goto('/');await signIn(page,'alice@example.test',true);
   const second=await context.newPage();await second.goto('http://127.0.0.1:4232/');
-  await expect(second.getByRole('heading',{name:'Your account',exact:true})).toBeVisible();
+  await expect(second.getByRole('banner').getByRole('link',{name:'Account settings',exact:true})).toBeVisible();
   await Promise.all([
     page.getByRole('button',{name:'Back up report',exact:true}).evaluate(element=>(element as HTMLButtonElement).click()),
     second.getByRole('button',{name:'Back up report',exact:true}).evaluate(element=>(element as HTMLButtonElement).click()),
@@ -256,7 +283,7 @@ test('touch users can sign in and open a frozen account report',async({browser})
   const dialog=page.getByRole('dialog',{name:'Sign in',exact:true});
   await dialog.getByLabel('Email',{exact:true}).fill('alice@example.test');await dialog.getByLabel('Password',{exact:true}).fill('synthetic-password');
   await dialog.getByRole('button',{name:'Sign in',exact:true}).tap();
-  await expect(page.getByRole('heading',{name:'Your account',exact:true})).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link',{name:'Account settings',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Open account report'}).tap();
   await expect(page.getByRole('heading',{name:'Your results',exact:true})).toBeVisible();
   await context.close();
@@ -271,24 +298,24 @@ test('authentication failures remain retryable and do not block a guest exam',as
   await expect(page.getByRole('heading',{name:'Question 1 of 60',exact:true})).toBeVisible();
 });
 
-test('bulk import sends bounded batches and leaves remaining reports pending until another sync',async({page,context})=>{
+test('automatic signup migration sends bounded batches and retains pending reports for explicit retry',async({page,context})=>{
   const server=mockAccountServer();await server.attach(context);
   const reports=Array.from({length:6},(_,i)=>completedFixture('bounded-batch-'+i));
   await page.addInitScript(attempts=>{
     localStorage.setItem('pcao-f:attempt-ids:v1',JSON.stringify(attempts.map(attempt=>attempt.id)));
     for(const attempt of attempts)localStorage.setItem('pcao-f:attempt:v1:'+attempt.id,JSON.stringify(attempt));
   },reports);
-  await page.goto('/');await signIn(page);
-  await page.getByRole('button',{name:'Import device history'}).click();
-  await page.getByRole('dialog',{name:'Import device history'}).getByRole('button',{name:'Import selected reports'}).click();
+  await page.goto('/');await signUp(page);
+  await expect(page.getByRole('button',{name:'Import device history'})).toHaveCount(0);
   await expect(page.getByText('Backed up',{exact:true})).toHaveCount(5,{timeout:10000});
+  await expect(page.getByText('Backup pending',{exact:true})).toHaveCount(1);
   expect(server.rows).toHaveLength(5);
   await page.getByRole('button',{name:'Retry backup',exact:true}).click();
   await expect(page.getByText('Backed up',{exact:true})).toHaveCount(6,{timeout:20000});
   expect(server.rows).toHaveLength(6);
 });
 
-test('importing an older already-backed-up report does not skip unseen account history',async({page,context})=>{
+test('backing up an older saved report does not skip unseen account history',async({page,context})=>{
   const server=mockAccountServer();const base=completedFixture('pagination-base');
   const older={...base,id:'older-local-report',startedAt:base.startedAt-60000,deadlineAt:base.deadlineAt-60000,submittedAt:base.submittedAt!-60000};
   server.rows.push(...await Promise.all(Array.from({length:21},(_,i)=>cloudRow(userA,{...base,id:'newer-account-'+i}))));
@@ -363,22 +390,34 @@ test('signup migration retries a failed backup after reopening without an import
   await expect(page.getByRole('dialog', { name: 'Import device history' })).toHaveCount(0);
 });
 
-test('header account access is available in Exam and Results and signup preserves the running exam', async ({ page, context }) => {
+test('active Exam defers authentication through reload, Review and leave confirmation; Results restores signup', async ({ page, context }) => {
   const server = mockAccountServer(); await server.attach(context); await page.goto('/');
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
   await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
-  await expect(page.getByRole('banner').getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
-  const before = await page.evaluate(() => localStorage.getItem('pcao-f:attempt:v1:' + JSON.parse(localStorage.getItem('pcao-f:attempt-ids:v1')!)[0]));
-  await signUp(page);
+  await page.getByRole('radio').first().check();
+  const saved = () => page.evaluate(() => localStorage.getItem('pcao-f:attempt:v1:' + JSON.parse(localStorage.getItem('pcao-f:attempt-ids:v1')!)[0]));
+  const before = await saved();
+  const restricted = async () => {
+    await expect(page.getByRole('banner')).toContainText('Guest');
+    for (const name of ['Sign in', 'Create account', 'Finish password reset']) await expect(page.getByRole('button', { name, exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Account settings', exact: true })).toHaveCount(0);
+  };
+  await restricted();
+  page.once('dialog', dialog => dialog.accept()); await page.reload();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
-  expect(await page.evaluate(() => localStorage.getItem('pcao-f:attempt:v1:' + JSON.parse(localStorage.getItem('pcao-f:attempt-ids:v1')!)[0]))).toBe(before);
-  expect(server.rows).toHaveLength(0);
-  await page.getByRole('button', { name: 'Review & submit' }).click();
-  await page.getByRole('dialog', { name: 'Review and submit' }).getByRole('button', { name: 'Submit exam', exact: true }).click();
+  await restricted(); expect(await saved()).toBe(before);
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Leave exam?' })).toBeVisible(); await restricted();
+  await page.getByRole('button', { name: 'Stay in exam' }).click();
+  await page.getByRole('button', { name: 'Review & submit' }).click(); await restricted();
+  await page.getByRole('button', { name: 'Submit exam', exact: true }).click(); await restricted();
+  expect(server.requests.filter(path => /signup|token/.test(path))).toHaveLength(0);
   await page.getByRole('button', { name: 'Confirm submission', exact: true }).click();
-  await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
-  await expect(page.getByRole('banner').getByRole('button', { name: 'Create account', exact: true })).toBeVisible();
+  const report = await saved(); await signUp(page);
+  await expect(page.getByText('Backed up', { exact: true })).toBeVisible({ timeout: 20000 });
+  expect(await saved()).toBe(report); expect(server.rows).toHaveLength(1);
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Account settings', exact: true })).toBeVisible();
 });
 
 test('header signup controls fit six layouts with keyboard access and large touch targets', async ({ page, context }) => {
@@ -403,6 +442,37 @@ test('header signup controls fit six layouts with keyboard access and large touc
     await page.keyboard.press('Tab'); await expect(dialog.getByRole('button', { name: 'Close dialog' })).toBeFocused();
     await page.keyboard.press('Escape'); await expect(dialog).toHaveCount(0); await expect(signup).toBeFocused();
   }
+});
+
+test('signed-in Exam keeps status through reload and guarded Back, then restores Settings without changing progress', async ({ page, context }) => {
+  const server = mockAccountServer(); await server.attach(context); await page.goto('/'); await signIn(page);
+  await settings(page); await page.reload();
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page.getByRole('heading', { name: 'Account settings', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to attempt history' }).click();
+  await expect(page).toHaveURL(/\/history$/); await page.reload();
+  await expect(page.getByRole('heading', { name: 'Attempt history', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Start exam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
+  await page.getByRole('radio').first().check(); await page.getByRole('button', { name: 'Flag for review' }).click();
+  await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
+  const saved = () => page.evaluate(() => localStorage.getItem('pcao-f:attempt:v1:' + JSON.parse(localStorage.getItem('pcao-f:attempt-ids:v1')!)[0]));
+  const before = await saved();
+  page.once('dialog', dialog => dialog.accept()); await page.reload();
+  await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
+  await expect(page.getByRole('banner').getByText('alice@example.test', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Account settings', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toHaveCount(0);
+  await page.goBack();
+  const leave = page.getByRole('dialog', { name: 'Leave exam?' });
+  await expect(leave).toBeVisible(); await leave.getByRole('button', { name: 'Stay in exam' }).click();
+  expect(await saved()).toBe(before);
+  await page.goBack(); await leave.getByRole('button', { name: 'Go to attempt history' }).click();
+  await settings(page); expect(await saved()).toBe(before); expect(server.rows).toHaveLength(0);
+  await page.getByRole('button', { name: 'Back to attempt history' }).click();
+  await page.getByRole('button', { name: 'Resume attempt' }).click();
+  await expect(page.getByRole('radio').first()).toBeChecked();
+  expect(await saved()).toBe(before);
 });
 
 async function holdNextSignup(page: Page) {
@@ -435,7 +505,7 @@ test('BUG-AUTH-001 rejects a@b before sending signup and allows correction', asy
   await dialog.getByLabel('Email', { exact: true }).fill('corrected@example.test');
   await dialog.getByRole('button', { name: 'Create account', exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Your account', exact: true })).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Account settings', exact: true })).toBeVisible();
 });
 for (const dismiss of ['Cancel', 'Close dialog', 'Escape'] as const) {
   test('BUG-AUTH-002 pending signup can close with '+dismiss+' across six layouts without a late session', async ({ page, context }) => {
@@ -457,7 +527,7 @@ for (const dismiss of ['Cancel', 'Close dialog', 'Escape'] as const) {
       await expect(dialog).toHaveCount(0);
       const opener = page.getByRole('banner').getByRole('button', { name: 'Create account', exact: true });
       await expect(opener).toBeFocused(); held.release(); await held.done;
-      await expect(page.getByRole('heading', { name: 'Your account', exact: true })).toHaveCount(0);
+      await expect(page.getByRole('banner').getByRole('link', { name: 'Account settings', exact: true })).toHaveCount(0);
       expect(await page.evaluate(id => localStorage.getItem('pcao-f:attempt-owner:v1:' + id), attempt.id)).toBeNull();
       expect(server.rows).toHaveLength(0);
     }
@@ -479,5 +549,5 @@ test('BUG-AUTH-002 a hung signup times out with retained fields and can be retri
   held.release(); await held.done;
   await dialog.getByRole('button', { name: 'Create account', exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Your account', exact: true })).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link', { name: 'Account settings', exact: true })).toBeVisible();
 });

@@ -13,6 +13,7 @@ type Props = {
   canStart: boolean;
   onStart: () => void;
   onHistory: () => void;
+  onGuidedReview?: () => void;
 };
 
 let reportPdfModule: Promise<typeof import('./reportPdf')> | undefined;
@@ -82,17 +83,30 @@ function QuestionReview({ attempt, question, index }: { attempt: Attempt; questi
   </details>;
 }
 
-export function ResultsPage({ attempt, headingRef, canStart, onStart, onHistory }: Props) {
+export function ResultsPage({ attempt, headingRef, canStart, onStart, onHistory, onGuidedReview }: Props) {
   const [filter, setFilter] = useState<ResultFilter>('all');
   const [exportError, setExportError] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [pdfState, setPdfState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [pdfLoadAttempt, setPdfLoadAttempt] = useState(0);
   const exportOpener = useRef<HTMLElement | null>(null);
+  const exportActions = useRef<HTMLDivElement | null>(null);
+  const retryActions = useRef<HTMLDivElement | null>(null);
+  const retryFocus = useRef(false);
   useEffect(() => {
-    // Load only for Results; keep generation available after going offline.
-    void loadReportPdf().catch(() => {});
-  }, []);
+    let active = true;
+    setPdfState('loading');
+    // Readiness acknowledges actual import completion, not a timer or networkidle.
+    void loadReportPdf().then(() => { if (active) setPdfState('ready'); }, () => { if (active) setPdfState('error'); });
+    return () => { active = false; };
+  }, [pdfLoadAttempt]);
   useEffect(() => {
-    if (exporting) return;
+    if (pdfState === 'loading' || !retryFocus.current) return;
+    retryFocus.current = false;
+    if (document.activeElement === document.body) (pdfState === 'ready' ? exportActions.current?.querySelector<HTMLButtonElement>('[data-pdf-export]') : retryActions.current?.querySelector<HTMLButtonElement>('button'))?.focus();
+  }, [pdfState]);
+  useEffect(() => {
+    if (exporting || pdfState !== 'ready') return;
     const opener = exportOpener.current;
     exportOpener.current = null;
     if (opener?.isConnected && document.activeElement === document.body) opener.focus({ preventScroll: true });
@@ -155,7 +169,10 @@ export function ResultsPage({ attempt, headingRef, canStart, onStart, onHistory 
       <div><dt>Dataset version</dt><dd>{attempt.datasetVersion}</dd></div>
       <div><dt>Difficulty</dt><dd>{difficultyLabel(attempt.difficulty)}</dd></div>
     </dl>
-    <div className="result-actions"><Button onClick={onHistory}>Attempt history</Button><Button disabled={exporting} aria-busy={exporting} onClick={exportReport}>{exporting ? 'Preparing PDF...' : 'Export report (PDF)'}</Button><Button variant="primary" disabled={!canStart} onClick={onStart}>Start new attempt</Button></div>
+    <div className="result-actions" ref={exportActions}><Button onClick={onHistory}>Attempt history</Button><Button data-pdf-export disabled={exporting || pdfState !== 'ready'} aria-busy={exporting || pdfState === 'loading'} onClick={exportReport}>{exporting ? 'Preparing PDF...' : pdfState === 'loading' ? 'Loading PDF export…' : pdfState === 'error' ? 'PDF export unavailable' : 'Export report (PDF)'}</Button><Button variant="primary" disabled={!canStart} onClick={onStart}>Start new attempt</Button></div>
+    {pdfState === 'loading' && <p role="status">Loading PDF export dependencies. First-use offline export is available only after this finishes.</p>}
+    {pdfState === 'error' && <div ref={retryActions}><p role="alert">PDF export could not be loaded. Connect to the internet and retry PDF loading.</p><Button onClick={event => { retryFocus.current = document.activeElement === event.currentTarget; setPdfLoadAttempt(value => value + 1); }}>Retry PDF loading</Button></div>}
+    {attempt.status === 'submitted' && onGuidedReview && <div className="result-actions"><Button onClick={onGuidedReview}>Guided Review</Button></div>}
     {exportError && <p role="alert">The report could not be exported. Please try again.</p>}
     <Card className="domain-card">
       <h2>By domain</h2>

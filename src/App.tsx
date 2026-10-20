@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { Link, useBlocker, useLocation, useNavigate } from 'react-router';
 import { type Question } from './domain/bank';
 import { createDifficultyBankLoader, difficultyLabel, type Difficulty, type DifficultyBankState } from './domain/difficulty';
@@ -19,9 +19,16 @@ import { useAccountHistory } from './hooks/useAccountHistory';
 import { AccountPanel, ReportBackupActions } from './ui/AccountPanel';
 import { AccountHeader } from './ui/AccountHeader';
 import { AccountSettingsPage } from './ui/AccountSettingsPage';
-import type { CloudReport } from './domain/cloudReports';
+import { reportHash, type CloudReport } from './domain/cloudReports';
 import { attachAnalyticsEngagement, setAnalyticsContext, trackEvent } from './services/analytics';
-import { flowState, routeView, viewPath, type AppView } from './domain/navigation';
+import { flowState, routeView, viewPath, guidedSessionId, guidedSessionPath, type AppView } from './domain/navigation';
+import { guidedEnabled } from './domain/guided/runtime';
+import { browserSourceAccess } from './domain/guided/access';
+import { readOwnership } from './domain/archiveStorage';
+import type { GuidedOrigin } from './domain/guided/schema';
+
+import GuidedPractice from './ui/guided/GuidedPractice';
+import { PostExamGuidedDialog } from './ui/guided/PostExamGuidedDialog';
 
 // Storage access itself can throw; domain helpers catch these failures.
 const browserStorage: AttemptStorage = {
@@ -71,6 +78,7 @@ export function App() {
   const attemptRef = useRef<Attempt | null>(null);
   const pendingEdits = useRef<{ attemptId: string; edit: (current: Attempt) => Attempt; optimistic: boolean }[]>([]);
   const location = useLocation();
+  const guidedRouteIntent = useRef(location.key); guidedRouteIntent.current = location.key;
   const navigateRoute = useNavigate();
   const view = routeView(location.pathname, location.state);
   const [reviewStage, setReviewStage] = useState<'review' | 'confirm' | null>(null);
@@ -88,6 +96,39 @@ export function App() {
   const previousView = useRef<AppView>(view);
   const supportsSaving = Boolean(navigator.locks);
   const account = useAccountHistory(browserStorage, history, refreshHistory);
+  const guidedOwner = useRef(account.currentOwner); guidedOwner.current = account.currentOwner;
+  const guidedDownload = useRef(account.guidedSource); guidedDownload.current = account.guidedSource;
+  const [guidedAccess] = useState(() => browserSourceAccess(() => guidedOwner.current(), () => localStorage,
+    async id => {
+      const source = await guidedDownload.current(id);
+      if (!source || !('deleted' in source)) return source;
+      // A verified cloud tombstone authorizes derived-only cleanup for that
+      // exact source and owner. No Mock marker, cache or cloud row is written.
+      const { createGuidedRepository } = await import('./domain/guided/storage');
+      const repository = createGuidedRepository({ currentOwner: () => guidedOwner.current(),
+        sourceDeleted: (sourceId, ownerId) => sourceId === id && ownerId === source.ownerId && source.fresh() });
+      const cleanup = await repository.cleanupPrivate(); repository.close();
+      if (!cleanup.ok) setGuidedCleanupError(true);
+      return null;
+    }));
+  const [guidedReview, setGuidedReview] = useState<{ report: Attempt;
+    access: Extract<GuidedOrigin, { kind: 'post-exam' }>['access'] } | null>(null);
+  useEffect(() => { setGuidedReview(null); }, [account.userId, location.key]);
+  const previousGuidedOwner = useRef<string | null>(null);
+  const [guidedCleanupError, setGuidedCleanupError] = useState(false);
+  useEffect(() => {
+    if (!guidedEnabled || account.authLoading) return;
+    const ownerLost = previousGuidedOwner.current && previousGuidedOwner.current !== account.userId ? previousGuidedOwner.current : undefined;
+    previousGuidedOwner.current = account.userId;
+    let cancelled = false;
+    void import('./domain/guided/storage').then(async ({ createGuidedRepository }) => {
+      const repository = createGuidedRepository({ currentOwner: () => guidedOwner.current() });
+      const result = await repository.cleanupPrivate(ownerLost);
+      repository.close();
+      if (!cancelled) setGuidedCleanupError(!result.ok);
+    });
+    return () => { cancelled = true; };
+  }, [account.userId, account.authLoading, history]);
   const previousOwner = useRef<string | null>(null);
   const blocker = useBlocker(() => view === 'exam' && attemptRef.current?.status === 'in-progress' &&
     account.canView(attemptRef.current.id) && remainingMilliseconds(attemptRef.current.deadlineAt) > 0);
@@ -96,8 +137,8 @@ export function App() {
   const reportAttempt = accountReport?.attempt ?? attempt;
   useEffect(() => attachAnalyticsEngagement(), []);
   useEffect(() => {
-    setAnalyticsContext({ view, difficulty: view === 'start' || view === 'settings' || view === 'history' ? null : reportAttempt?.difficulty ?? 'original' });
-  }, [view, reportAttempt?.difficulty]);
+    setAnalyticsContext({ view: guidedReview ? 'guided' : view, difficulty: !guidedReview && (view === 'exam' || view === 'results') ? reportAttempt?.difficulty ?? 'original' : null });
+  }, [view, reportAttempt?.difficulty, guidedReview]);
   const previousReview = useRef(false);
   useEffect(() => {
     if (reviewStage && !previousReview.current) trackEvent('review_opened', { difficulty: attempt?.difficulty ?? 'original' });
@@ -296,6 +337,7 @@ export function App() {
     }
     if (view === 'start' && previousView.current !== 'start') startHeading.current?.focus({ preventScroll: true });
     document.title = view === 'history' ? 'Attempt history — PCAO-F practice' : view === 'settings' ? 'Account settings — PCAO-F practice' : 'PCAO-F practice';
+    if (view === 'guided' || view === 'guided-session') document.title = 'Guided Practice — PCAO-F practice';
     previousView.current = view;
   }, [view, attempt?.currentQuestionId, accountReport?.attempt.id]);
 
@@ -421,6 +463,38 @@ export function App() {
     setAccountReport({ userId: row.user_id, attempt: payload });
     setView('results', false, row.attempt_id); setMessage('');
     window.scrollTo(0, 0);
+  }
+
+  function openGuidedReview(report: Attempt) {
+    try {
+      const owner = readOwnership(browserStorage, report.id);
+      const id = account.currentOwner();
+      if (owner?.state === 'deleted' || (owner && owner.userId !== id)) return;
+      setGuidedReview({ report, access: accountReport && id ? { kind: 'account', ownerId: id } :
+        owner ? { kind: 'account', ownerId: owner.userId } : { kind: 'guest-device' } });
+    } catch { setMessage('Source report access could not be verified. Ordinary review remains available.'); }
+  }
+
+  async function returnGuidedReport(id: string, hash: string): Promise<boolean> {
+    const owner = account.currentOwner();
+    const intent = guidedRouteIntent.current;
+    try {
+      const raw = browserStorage.getItem('pcao-f:attempt:v1:' + id);
+      const ownerRaw = browserStorage.getItem('pcao-f:attempt-owner:v1:' + id);
+      const saved = recoverAttempt(browserStorage, id);
+      if (saved.ok && saved.attempt?.status === 'submitted' && account.canView(id)) {
+        const marker = readOwnership(browserStorage, id);
+        if (marker?.state === 'deleted' || await reportHash(saved.attempt) !== hash || account.currentOwner() !== owner ||
+          guidedRouteIntent.current !== intent || browserStorage.getItem('pcao-f:attempt:v1:' + id) !== raw ||
+          browserStorage.getItem('pcao-f:attempt-owner:v1:' + id) !== ownerRaw) return false;
+        setAccountReport(null); updateAttempt(saved.attempt); setView('results', false, id); return true;
+      }
+      // A present inaccessible/changed original cannot be bypassed through a download.
+      if (browserStorage.getItem('pcao-f:attempt:v1:' + id) !== null) return false;
+      const source = await account.guidedSource(id);
+      if (!source || 'deleted' in source || !owner || await reportHash(source.attempt) !== hash || !source.fresh() || guidedRouteIntent.current !== intent) return false;
+      updateAttempt(null); setAccountReport({ userId: owner, attempt: source.attempt }); setView('results', false, id); return true;
+    } catch { return false; }
   }
 
   useEffect(() => {
@@ -626,6 +700,10 @@ export function App() {
             {unfinished.length > 0 && <p className="resume-note">Your timer is still running. Resume with your saved answers, flags, and original deadline.</p>}
             <Button variant="primary" disabled={!canStart} aria-haspopup="dialog" onClick={openDifficulty}>{unfinished.length ? 'Start another exam' : 'Start exam'}</Button>
           </>}
+          {view === 'start' && guidedEnabled && <Card className="guided-home-card"><h2>Guided Practice</h2>
+            <p>Untimed · learn the reasoning. Practise five or ten questions with optional progressive hints.</p>
+            <Link className="button button--secondary" to="/guided">Open Guided Practice</Link>
+          </Card>}
           <section className="history-section" aria-labelledby="history-title">
             <h2 id="history-title">Your attempts</h2>
             <p className="muted">{account.available ? 'Device history stays in this browser. Create an account to automatically back up completed reports across devices.' : 'History is saved on this device/browser. It is not synced to other devices.'}</p>
@@ -652,6 +730,13 @@ export function App() {
           <AccountPanel key={account.userId ?? 'guest'} account={account} history={history} showHistory keepCopy={keepAccountCopy} onKeepCopyChange={setKeepAccountCopy} onOpenReport={openAccountReport} />
           <p className="footnote">Practice score uses equal-weight question scoring; it is not an official certification score.</p>
         </>}
+
+        {(view === 'guided' || view === 'guided-session') && <Suspense fallback={<p role="status">Loading Guided Practice…</p>}>
+          {guidedCleanupError && <p role="alert">Some inaccessible private practice could not be cleared locally. It remains unavailable. Check browser storage permissions and retry by reopening this page.</p>}
+          {view === 'guided-session' && !guidedSessionId(location.pathname) ? <Card><h1>Practice session unavailable</h1><p>The session address is invalid.</p><Link to="/guided">Return to Guided Practice</Link></Card> :
+            <GuidedPractice sessionId={guidedSessionId(location.pathname)} ownerId={account.userId} currentOwner={account.currentOwner}
+              sourceAccess={guidedAccess} onReturnReport={returnGuidedReport} />}
+        </Suspense>}
 
         {view === 'exam' && attempt && question && <>
           <p className="eyebrow">{difficultyLabel(attempt.difficulty)} · Timed attempt · dataset {attempt.datasetVersion}</p>
@@ -716,9 +801,15 @@ export function App() {
         </>}
 
         {view === 'results' && displayedReport?.status === 'submitted' && <>
-          <ResultsPage key={displayedReport.id} attempt={displayedReport} headingRef={resultsHeading} canStart={canStart} onStart={openDifficulty} onHistory={showHistory} />
+          <ResultsPage key={displayedReport.id} attempt={displayedReport} headingRef={resultsHeading} canStart={canStart} onStart={openDifficulty} onHistory={showHistory}
+            onGuidedReview={guidedEnabled ? () => openGuidedReview(displayedReport) : undefined} />
           {!accountReport && account.available && <ReportBackupActions account={account} attempt={displayedReport} />}
         </>}
+        {view === 'results' && guidedReview && guidedEnabled &&
+          (guidedReview.access.kind === 'guest-device' || guidedReview.access.ownerId === account.userId) && <Suspense fallback={<p role="status">Loading Guided Review…</p>}>
+          <PostExamGuidedDialog report={guidedReview.report} access={guidedReview.access} sourceAccess={guidedAccess} currentOwner={account.currentOwner}
+            onClose={() => setGuidedReview(null)} onCreated={id => { void navigateRoute(guidedSessionPath(id)); }} />
+        </Suspense>}
         <DifficultySelectionDialog preparation={preparation} bankState={bankStates[preparation?.difficulty ?? 'intermediate']}
           busy={startPending} canSave={supportsSaving && !historyLoading && historyErrors.length === 0}
           hasUnfinished={unfinished.length > 0} message={message}

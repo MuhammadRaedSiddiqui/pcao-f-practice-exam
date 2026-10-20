@@ -25,13 +25,14 @@ for (const flags of [0, 1, 2]) {
       localStorage.setItem(key, JSON.stringify(attempt));
     }, flags);
     // Recover through the real persistence path without navigating away.
-    await page.getByRole('button', { name: 'Attempt history', exact: true }).click();
+    await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
     await page.getByRole('button', { name: 'Go to attempt history' }).click();
     await page.getByRole('button', { name: 'Resume attempt' }).click();
     await page.getByRole('button', { name: 'Review & submit' }).click();
     await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Submit exam?' });
-    await expect(dialog).toContainText('0 unanswered');
+    await expect(dialog).toContainText('All questions have the required number of selections.');
+    await expect(dialog).not.toContainText('unanswered');
     if (flags === 0) await expect(dialog).not.toContainText('flagged');
     else await expect(dialog).toContainText(flags + ' flagged ' + (flags === 1 ? 'question' : 'questions') + ' to revisit');
     await expect(page.locator('[role="timer"]:visible')).toHaveCount(1);
@@ -57,7 +58,7 @@ for (const viewport of [
     await page.getByRole('button', { name: 'Flag for review' }).click();
     await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
     const before = await savedAttempt(page);
-    const opener = page.getByRole('button', { name: 'Attempt history', exact: true });
+    const opener = page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true });
     await opener.click();
     const dialog = page.getByRole('dialog', { name: 'Leave exam?' });
     await expect(dialog.getByRole('heading')).toBeFocused();
@@ -111,8 +112,8 @@ test('refresh warns, cancellation stays in exam, and acceptance recovers the ori
   expect(accepted.type()).toBe('beforeunload');
   await accepted.accept();
   await acceptedReload;
-  await expect(page.locator('.resume-note')).toContainText('Your timer is still running');
-  await page.getByRole('button', { name: 'Resume attempt' }).click();
+  await expect(page.getByRole('heading', { name: /^Question \d+ of 60$/ })).toBeVisible();
+  await expect(page.getByRole('radio').first()).toBeChecked();
   expect(await savedAttempt(page)).toEqual(before);
   await page.getByRole('button', { name: 'Review & submit' }).click();
   await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
@@ -132,13 +133,14 @@ test('browser Back warns before leaving the timed exam', async ({ page }) => {
   await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
   const before = await savedAttempt(page);
-  const prompt = page.waitForEvent('dialog');
-  const back = page.goBack();
-  const dialog = await prompt;
-  expect(dialog.type()).toBe('beforeunload');
-  await dialog.accept();
-  await back;
-  expect(page.url()).toContain('?qa=previous');
+  await page.goBack();
+  const dialog = page.getByRole('dialog', { name: 'Leave exam?' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Stay in exam' }).click();
+  expect(await savedAttempt(page)).toEqual(before);
+  await page.goBack();
+  await dialog.getByRole('button', { name: 'Go to home' }).click();
+  await expect(page.getByRole('heading', { name: 'Before you begin' })).toBeVisible();
   await page.getByRole('button', { name: 'Resume attempt' }).click();
   expect(await savedAttempt(page)).toEqual(before);
 });
@@ -152,7 +154,7 @@ test('expiry closes the leave dialog and finalizes once without warning', async 
   await page.getByRole('button', { name: 'Start Exam', exact: true }).click();
   await page.getByRole('radio').first().check();
   const before = await savedAttempt(page);
-  await page.getByRole('button', { name: 'Attempt history', exact: true }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await page.clock.fastForward(120 * 60_000);
   await expect(page.getByRole('heading', { name: 'Your results' })).toBeFocused();
   await expect(page.getByRole('dialog')).toHaveCount(0);

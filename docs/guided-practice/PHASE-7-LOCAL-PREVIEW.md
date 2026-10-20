@@ -1,0 +1,26 @@
+# Phase 7 — Sixty-guide local preview
+
+This is the owner-authorized **local/test candidate**, not a production release or a claim of final Phase 7 acceptance. The candidate includes sixty unchanged educationally accepted Intermediate guides at 1.1.0 and an exact ten-guide 1.0.0 companion for controlled compatibility verification. Production stays disabled with an empty catalog. Accounts, cloud backup, password recovery and telemetry are disabled in this preview.
+
+From PowerShell in `C:\Users\HP\OneDrive\Desktop\PCAO-F`:
+
+```powershell
+node tests/phase7-integration/build-candidate.mjs
+node tests/phase7-integration/launch.mjs
+```
+
+Open **[http://127.0.0.1:4258/guided](http://127.0.0.1:4258/guided)** in a dedicated normal browser profile. The server requires this exact unproxied HTTP origin/port; it refuses alternate hosts/ports, hosting/CI, build and preview modes. A busy port fails rather than choosing another port. No tunnel, deployment or public production access is required. Stop with **Ctrl+C in the launching terminal**. Restart the same command on the same origin/profile to resume browser-saved sessions. A running local server is required to reload the app; this is not an offline shell installer.
+
+The Start page offers five-item sessions by default and optional ten-item sessions. There are twelve five-item sets or six ten-item sets, reaching every real question exactly once per partition when all sixty guides are eligible. The labels within a session are practice positions, not original bank IDs. All three hints remain progressive saved reveals; answer feedback follows the first durable commitment. Completion is read-only. Guided remains blocked when a live or unverifiable Mock record exists; do not repair/delete Mock storage to bypass protection.
+
+The [local manifest endpoint](http://127.0.0.1:4258/__phase7/manifest) and excluded [candidate manifest](../../test-results/guided-practice/phase-7-integration/candidate/manifest.json) identify the exact artifact. Startup re-verifies the current owner-authorized tuples, source banks, q1/g1 and strict release/catalog contracts. It refuses mismatches. Candidate assets and their maps are written once under excluded `test-results/`; existing files must match byte-for-byte on every later preparation. Do not delete or overwrite them to bypass an identity failure. Any content change requires renewed affected educational approval and a new authorized version/artifact.
+
+Persistence uses the unchanged browser-local IndexedDB database **pcao-f-guided**, version **1**, store **sessions**. The preview does not write a new session schema or migrate any existing record. Browser profile deletion, private-mode closure, clearing storage or eviction can lose progress; no cloud recovery is provided. Use a dedicated test/owner-review profile and do not enter personal data or live credentials. The existing Guided-only deletion action remains explicit; no setup command clears a profile or database.
+
+This origin is **different from the accepted Phase 6 pilot's `http://127.0.0.1:4256`**. No origin transfer occurs. The compatibility tests seed new controlled 1.0.0 fixtures on 4258; they do not inspect or migrate the owner's retained 4256 profile. Original 4256 tooling, source, pins, acceptance/waivers and identities remain unchanged. Present owner-retained sessions and any real same-origin production sessions have not been inventoried. Before deployment the owner must choose the actual target origin, supported historical sessions and any authorized legacy catalog/asset support; an empty production catalog is not a fictional prior deployment.
+
+An intact frozen 1.0.0 session requires its exact source/version/digest catalog authorization and a compatible enabled reader. It can validate without re-fetching the old JSON asset because it already contains its complete frozen item data. Missing or revoked authorization remains a safe unavailable outcome, not an excuse to rewrite progress. Turning the feature off preserves records but blocks the entire interface, including resume; no starts-only pause switch is introduced.
+
+The excluded [Vite configuration](../../tests/phase7-integration/vite.config.ts) uses the existing runtime implementation with three checked catalog-injection substitutions: virtual candidate catalog import, loader catalog argument and standalone eligibility catalog argument. The original production runtime file and all validators remain unchanged. The actual source/version/digest/approval checks run; neither a permissive mock validator nor a runtime approval override is installed. Test-only browser fixtures and compatibility data do not enter ordinary builds. This preview refuses hosted build/preview use and must not be deployed.
+
+Verification results, failures and exact hashes are in the [implementation report](PHASE-7-INTEGRATION-IMPLEMENTATION-REPORT.md) and [compatibility report](PHASE-7-VERSION-COMPATIBILITY-VERIFICATION.md). No personal owner walkthrough, native accessibility result, physical-device support or learner outcome is claimed. Existing historical PDF/recovery/timing/resource-pressure release obligations remain outstanding. **Full Phase 7 final acceptance and production publication/enablement/deployment require separate owner decisions. No commit, push or Phase 8.**

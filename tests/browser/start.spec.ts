@@ -43,7 +43,7 @@ test('Start content is private, repeated clicks create one attempt, and replacem
   expect(first.deadlineAt - first.startedAt).toBe(120 * 60_000);
   expect(await page.locator('.option-label').allTextContents()).toEqual(bank.questions[0].options.map((option: { id: string }) => option.id));
 
-  await page.getByRole('button', { name: 'Attempt history' }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await page.getByRole('button', { name: 'Go to attempt history' }).click();
   await page.getByRole('button', { name: 'Start another exam' }).focus();
   await page.keyboard.press('Enter');
@@ -89,6 +89,10 @@ test('refresh recovery retains answers, flags, position, snapshot and deadline',
   const before = (await storedAttempts(page))[0];
   await page.route('**/question-bank.json', route => route.fulfill({ status: 503 }));
   await reloadPage(page);
+  await expect(page.getByRole('heading', { name: /^Question \d+ of 60$/ })).toBeVisible();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
+  await page.getByRole('button', { name: 'Go to attempt history' }).click();
+  await expect(page).toHaveURL(/\/history$/);
   await expect(page.getByRole('button', { name: 'Start another exam' })).toBeEnabled();
   await page.getByRole('button', { name: 'Resume attempt' }).click();
   await expect(page.getByRole('heading', { name: 'Question 2 of 60', exact: true })).toBeVisible();
@@ -107,7 +111,7 @@ test('resuming an expired attempt submits once and opens its original report', a
   await page.locator('input[name="answer-Q1"]').first().check();
   await page.getByRole('button', { name: 'Flag for review' }).click();
   await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Attempt history' }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await page.getByRole('button', { name: 'Go to attempt history' }).click();
   await page.evaluate(() => {
     const id = JSON.parse(localStorage.getItem('pcao-f:attempt-ids:v1')!)[0];
@@ -128,6 +132,8 @@ test('resuming an expired attempt submits once and opens its original report', a
   expect(submitted.flags).toEqual(expired.flags);
   expect(submitted.deadlineAt).toEqual(expired.deadlineAt);
   await reloadPage(page);
+  await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await expect(page.locator('.history-row')).toContainText('Completed');
   await expect(page.locator('.history-row')).toContainText('Practice score');
   await page.getByRole('button', { name: 'Open report' }).click();
@@ -153,6 +159,8 @@ test('old reports retain original grading and content after bank changes', async
   newer.questions[0].correctOptionIds = [bank.questions[0].options.find((option: { id: string }) => !bank.questions[0].correctOptionIds.includes(option.id)).id];
   await page.route('**/question-bank.json', route => route.fulfill({ json: newer }));
   await reloadPage(page);
+  await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await expect(page.locator('.history-row')).toContainText('Practice score 17 / 1000 · 1 / 60 correct');
   await expect(page.locator('.history-row')).toContainText('Completed');
   await page.screenshot({ path: 'screenshots/start-history-1366.png', fullPage: true });
@@ -238,12 +246,16 @@ test('Start and its confirmation remain accessible with enlarged text', async ({
   await page.setViewportSize({ width: 320, height: 650 });
   await page.goto('/');
   await page.evaluate(() => { document.body.style.fontSize = '24px'; });
-  await page.getByRole('button', { name: 'Start exam', exact: true }).focus();
+  const startButton = page.getByRole('button', { name: 'Start exam', exact: true });
+  await expect(startButton).toBeEnabled();
+  await startButton.focus();
+  await expect(startButton).toBeFocused();
   await page.keyboard.press('Enter');
   await page.getByRole('radio', { name: 'Advanced', exact: true }).check();
   await page.getByRole('button', { name: 'Start Exam', exact: true }).focus();
   await page.keyboard.press('Enter');
-  await page.getByRole('button', { name: 'Attempt history' }).click();
+  await expect(page.getByRole('heading', { name: 'Question 1 of 60', exact: true })).toBeVisible();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await page.getByRole('button', { name: 'Go to attempt history' }).click();
   await page.screenshot({ path: 'screenshots/start-enlarged-320.png', fullPage: true });
   await page.getByRole('button', { name: 'Start another exam' }).click();

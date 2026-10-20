@@ -1,0 +1,688 @@
+{
+  "schemaVersion": 1,
+  "fingerprintVersion": 1,
+  "guideVersion": "1.0.0",
+  "source": {
+    "schemaVersion": 1,
+    "examId": "pcao-f-practice-easy-01",
+    "bankVersion": "1.0.0",
+    "difficulty": "intermediate"
+  },
+  "contentStatus": "reviewed",
+  "questions": [
+    {
+      "questionId": "Q4",
+      "sourceFingerprint": "sha256:q1:9a83ec0a394581b92434e2585ca83c5f31c5e5daa8286834040fb6cfaa0306a1",
+      "hints": [
+        "Separate what the leaflet must communicate from how the organiser wants to develop it.",
+        "Consider which reader facts are missing, then trace the order of work requested by each proposal.",
+        "At what point would the organiser first be able to influence the structure, and what would already have been written?"
+      ],
+      "decisiveCriteria": [
+        "The brief must fit beginner working adults, evening classes, practical outcomes and plain language.",
+        "Alternative structures must be available for organiser feedback before any full leaflet is written.",
+        "The two selected changes must jointly address both content direction and the requested decision process."
+      ],
+      "reasoningMarkdown": "A supplies the missing audience and course context; D adds brief alternatives followed by an organiser decision before expansion. Together they meet both needs. B provides alternatives but has already written complete leaflets. C lets AI choose and expand before human direction. E controls length and polish without supplying the missing context or staged choice. The strongest competing ideas are B and C: each offers alternatives, but neither preserves the requested stopping point.",
+      "optionComparisons": [
+        {
+          "optionId": "A",
+          "satisfiesMarkdown": "Provides reader level, timetable, useful outcomes and accessible wording.",
+          "failsOrLimitsMarkdown": "Does not itself establish the pause before full drafting; it works with D rather than replacing that process requirement."
+        },
+        {
+          "optionId": "B",
+          "satisfiesMarkdown": "Offers different structures with concrete writing examples.",
+          "failsOrLimitsMarkdown": "The complete leaflets arrive before the organiser can give the required structure feedback."
+        },
+        {
+          "optionId": "C",
+          "satisfiesMarkdown": "Compares alternatives against aims and explains a choice.",
+          "failsOrLimitsMarkdown": "Automatic expansion gives the decision to AI and bypasses the organiser’s required feedback before drafting."
+        },
+        {
+          "optionId": "D",
+          "satisfiesMarkdown": "Keeps alternatives brief and pauses for organiser direction before finished text.",
+          "failsOrLimitsMarkdown": "Does not supply all missing audience details by itself; A supplies the complementary context."
+        },
+        {
+          "optionId": "E",
+          "satisfiesMarkdown": "Adds potentially useful length, grammar and tone controls.",
+          "failsOrLimitsMarkdown": "Produces a polished leaflet without filling the audience-context and structure-feedback gaps."
+        }
+      ],
+      "closestDistractorIds": [
+        "B",
+        "C"
+      ],
+      "vocabulary": [
+        {
+          "term": "Task context",
+          "definition": "Facts that shape a useful response for this specific reader and situation."
+        },
+        {
+          "term": "Decision point",
+          "definition": "A planned stop at which a person chooses the direction of subsequent work."
+        }
+      ],
+      "sourceChecks": [
+        {
+          "sourceIndex": 0,
+          "claim": "Develop alternatives, receive human feedback, and only then expand a chosen direction.",
+          "evidenceLocator": "AI source check, 2026-10-17; human check pending. https://agentfactory.panaversity.org/docs/ai-prompting-2026 — 7. The brainstorm-iterate loop"
+        }
+      ],
+      "approval": {
+        "status": "approved",
+        "reviewId": "gp2-intermediate-q4-v1"
+      }
+    },
+    {
+      "questionId": "Q5",
+      "sourceFingerprint": "sha256:q1:ce4cbf6d597d22c22b9fda28adc28c97562edfda5acdbb9618215b402596693e",
+      "hints": [
+        "Which condition decides whether a configuration qualifies, and which condition ranks the qualifiers?",
+        "Keep results before repair separate from results that a different repair workflow might eventually produce.",
+        "Make a shortlist using the qualifying condition, then compare one complete trial on the same cost basis."
+      ],
+      "decisiveCriteria": [
+        "Eight of eight results must be correct before manual repair.",
+        "Among qualifying configurations, choose the lowest complete-trial cost.",
+        "Identical inputs and approved access support this comparison; future performance still needs review."
+      ],
+      "reasoningMarkdown": "S, T and U each achieve 8/8 before repair. Their trial costs are $0.90, $2.00 and $1.20 respectively, so S is the lowest-cost qualifier and D is the initial choice. R’s lower price cannot compensate for 6/8 under this rule. U is cheaper than T but not cheaper than every qualifier. T’s extra price is not evidence of better future results. These observations justify a monitored initial choice, not a guarantee.",
+      "optionComparisons": [
+        {
+          "optionId": "A",
+          "satisfiesMarkdown": "T meets the observed 8/8 quality threshold.",
+          "failsOrLimitsMarkdown": "Its $2.00 trial costs more than both other qualifiers; speculative future insurance does not satisfy lowest tested cost."
+        },
+        {
+          "optionId": "B",
+          "satisfiesMarkdown": "R has the lowest listed trial cost and acknowledges continued checking.",
+          "failsOrLimitsMarkdown": "Its 6/8 before repair fails the threshold. Adding manual repair changes the workflow and has no established full cost here."
+        },
+        {
+          "optionId": "C",
+          "satisfiesMarkdown": "U qualifies and is cheaper than T; future review is sensible.",
+          "failsOrLimitsMarkdown": "At $1.20 it still costs more than S at $0.90, so the comparison stops too early."
+        },
+        {
+          "optionId": "D",
+          "satisfiesMarkdown": "S qualifies at the minimum qualifying cost and keeps subsequent review.",
+          "failsOrLimitsMarkdown": "The trial supports an initial choice only; it cannot establish reliability on all future reports."
+        }
+      ],
+      "closestDistractorIds": [
+        "C"
+      ],
+      "vocabulary": [
+        {
+          "term": "Quality threshold",
+          "definition": "A minimum result that must be met before other preferences can decide."
+        },
+        {
+          "term": "Matched trial",
+          "definition": "A comparison using equivalent tasks and inputs so the observed results address the same job."
+        }
+      ],
+      "sourceChecks": [
+        {
+          "sourceIndex": 0,
+          "claim": "Use task-specific comparisons when choosing models; general rankings are insufficient.",
+          "evidenceLocator": "AI source check, 2026-10-17; human check pending. https://agentfactory.panaversity.org/docs/ai-prompting-2026 — 12. Cost, speed, and which model to use when"
+        }
+      ],
+      "approval": {
+        "status": "approved",
+        "reviewId": "gp2-intermediate-q5-v1"
+      }
+    },
+    {
+      "questionId": "Q6",
+      "sourceFingerprint": "sha256:q1:6bf7156dbe9af2e8cb7a28d191bca1bb77eb754172ee78246e97eadf83a1fa45",
+      "hints": [
+        "Distinguish information that has changed from the steps and layout that have stayed the same.",
+        "Check both where information is available for current drafting and where it is retained for later inspection.",
+        "Trace the scope of every proposed copy: which tasks could see it, and how would competing prices be avoided?"
+      ],
+      "decisiveCriteria": [
+        "Version 3 replaces version 2 for new prices; exactly one active price reference is allowed.",
+        "Version 2 must remain available for archive checks.",
+        "Stable drafting steps remain reusable without embedding another copy of changing prices.",
+        "Ticket facts must not become standing instructions for unrelated Projects."
+      ],
+      "reasoningMarkdown": "B meets the active-reference and archive requirements together while leaving the stable Skill alone. A keeps both price guides active, even with a preference instruction. C leaves old Project knowledge active and inserts changing facts into the procedure. D spreads ticket prices into staff’s global instructions, affecting other work. Workflow section 14 supports references in Project knowledge and procedures in Skills. AI verification is complete; independent human verification is pending.",
+      "optionComparisons": [
+        {
+          "optionId": "A",
+          "satisfiesMarkdown": "Preserves both versions and avoids changing the stable Skill.",
+          "failsOrLimitsMarkdown": "A preference instruction still leaves two active price references, contrary to the explicit one-reference requirement."
+        },
+        {
+          "optionId": "B",
+          "satisfiesMarkdown": "Uses current facts for drafting, retains the superseded guide separately and keeps the reusable procedure unchanged.",
+          "failsOrLimitsMarkdown": "Requires the archive to stay outside the active drafting reference; mere retention in the same active set would not meet the stem."
+        },
+        {
+          "optionId": "C",
+          "satisfiesMarkdown": "Makes newer prices available alongside the drafting procedure.",
+          "failsOrLimitsMarkdown": "Keeps obsolete active Project knowledge and creates a price copy in the Skill, mixing changing facts with stable steps."
+        },
+        {
+          "optionId": "D",
+          "satisfiesMarkdown": "Removes the old active guide and preserves the Skill layout.",
+          "failsOrLimitsMarkdown": "Global custom instructions apply beyond this Project and are the wrong scope for its changing ticket reference."
+        }
+      ],
+      "closestDistractorIds": [
+        "A"
+      ],
+      "vocabulary": [
+        {
+          "term": "Active reference",
+          "definition": "Material currently supplied as authoritative input for new work."
+        },
+        {
+          "term": "Archive",
+          "definition": "Retained historical material separated from the current drafting inputs."
+        },
+        {
+          "term": "Project",
+          "definition": "A workspace supplying its own standing context and reference files."
+        },
+        {
+          "term": "Skill",
+          "definition": "A reusable procedure loaded for a relevant task."
+        },
+        {
+          "term": "Global custom instructions",
+          "definition": "Standing preferences applied beyond one Project, making them unsuitable for this ticket-price reference."
+        }
+      ],
+      "sourceChecks": [
+        {
+          "sourceIndex": 0,
+          "claim": "Section 14 places references in Project knowledge, procedures in Skills, and rules in standing instructions.",
+          "evidenceLocator": "AI source verification completed, 2026-10-17; independent human verification pending. https://agentfactory.panaversity.org/docs/workflow-design-diagnosis-crash-course — 14. Rule, reference, or procedure (original passage inspected through course-site navigation; rendered lines 632–662)."
+        },
+        {
+          "sourceIndex": 1,
+          "claim": "Projects hold standing references; Skills hold reusable procedures; custom instructions have broader scope.",
+          "evidenceLocator": "AI source check, 2026-10-17; human check pending. https://agentfactory.panaversity.org/docs/skills-connectors-crash-course — 4. Skills vs Connectors vs Projects vs Custom Instructions"
+        }
+      ],
+      "approval": {
+        "status": "approved",
+        "reviewId": "gp2-intermediate-q6-v1"
+      }
+    },
+    {
+      "questionId": "Q10",
+      "sourceFingerprint": "sha256:q1:9409e7944553ad094d080a397daff595a9ddc361d09c138d206cd4c8724663c0",
+      "hints": [
+        "List what is already established about the notes, the chat and the missing part of the response.",
+        "Which possible causes would each proposed check actually distinguish, given those established facts?",
+        "Compare the effort of the checks with the uncertainty each one could remove before changing more of the workflow."
+      ],
+      "decisiveCriteria": [
+        "The short fresh chat already contains complete tasks and named owners.",
+        "The needed action-and-owner list is absent from the literal prompt and from the response.",
+        "No calculation is involved; choose the first useful check before costlier changes."
+      ],
+      "reasoningMarkdown": "C directly tests whether the missing output requirement explains the omission: make that requirement explicit, then compare the result with the complete notes. A revisits a context concern despite an already fresh short chat. D repeats an input step despite complete notes being present. B may help later if an explicit instruction still fails, but it changes a costlier variable before this available check. Workflow section 12 puts prompt completeness first, before costlier diagnostic steps. AI verification is complete; independent human verification is pending.",
+      "optionComparisons": [
+        {
+          "optionId": "A",
+          "satisfiesMarkdown": "A fresh run can sometimes test context interference.",
+          "failsOrLimitsMarkdown": "The current chat is already fresh and short; unchanged wording does not test the specific missing requirement first."
+        },
+        {
+          "optionId": "B",
+          "satisfiesMarkdown": "A stronger model could help if capability were established as the limiting factor.",
+          "failsOrLimitsMarkdown": "Capability has not been isolated; the cheaper explicit-output check has not been tried."
+        },
+        {
+          "optionId": "C",
+          "satisfiesMarkdown": "Tests the missing instruction directly and checks recovered tasks and owners against the notes.",
+          "failsOrLimitsMarkdown": "The revised answer still needs factual checking; explicit wording alone does not guarantee a complete or accurate handover."
+        },
+        {
+          "optionId": "D",
+          "satisfiesMarkdown": "Reuploading can be useful when inputs are absent or incomplete.",
+          "failsOrLimitsMarkdown": "The stem already establishes complete input; the unchanged prompt leaves the known instruction gap untested."
+        }
+      ],
+      "closestDistractorIds": [
+        "B"
+      ],
+      "vocabulary": [
+        {
+          "term": "Discriminating check",
+          "definition": "A check that helps distinguish plausible causes of the observed failure."
+        },
+        {
+          "term": "Output requirement",
+          "definition": "An explicit statement of what the response must contain."
+        }
+      ],
+      "sourceChecks": [
+        {
+          "sourceIndex": 0,
+          "claim": "Section 12 checks prompt completeness before session length, model/features, configuration and task fit.",
+          "evidenceLocator": "AI source verification completed, 2026-10-17; independent human verification pending. https://agentfactory.panaversity.org/docs/workflow-design-diagnosis-crash-course — 12. The sequence runs cheapest first (original passage inspected through course-site navigation; rendered lines 572–600)."
+        }
+      ],
+      "approval": {
+        "status": "approved",
+        "reviewId": "gp2-intermediate-q10-v1"
+      }
+    },
+    {
+      "questionId": "Q12",
+      "sourceFingerprint": "sha256:q1:83e2e0474692c99cc4f732bd0c39ebd9439708784d657c4a8d33ec5a125b0e13",
+      "hints": [
+        "What does the passing sample establish, and what remains contradicted by the full-run counts?",
+        "Separate evidence of a missing record from possible explanations for its removal.",
+        "Look for a check that connects the observed discrepancy to a particular decision the script made."
+      ],
+      "decisiveCriteria": [
+        "Every registration must appear exactly once, including blank phone fields; duplicate IDs are absent.",
+        "The full run loses one of 36 registrations despite reporting zero execution errors.",
+        "The missing registration and its removal rule are unknown; sample agreement alone cannot explain the loss."
+      ],
+      "reasoningMarkdown": "D identifies which input ID is absent from the output, then asks for the removal rule in plain language so it can be compared with the approved rule. A and C only revisit a sample that already passes. B is a potentially useful validation technique, but an unspecified planted error does not diagnose this actual missing valid registration. Blank phone handling is a hypothesis to investigate, not an established cause. After a fix, reconcile the full ID sets and rerun the known-answer checks.",
+      "optionComparisons": [
+        {
+          "optionId": "A",
+          "satisfiesMarkdown": "Confirms names and ordering on a hand-checked sample.",
+          "failsOrLimitsMarkdown": "Repeating a passing sample does not locate or explain the full-run missing registration."
+        },
+        {
+          "optionId": "B",
+          "satisfiesMarkdown": "Tests whether a deliberately faulty example is detected.",
+          "failsOrLimitsMarkdown": "The planted error is unspecified and does not connect to the actual lost valid record; this cannot justify accepting the current full output."
+        },
+        {
+          "optionId": "C",
+          "satisfiesMarkdown": "Adds another implementation’s sample comparison.",
+          "failsOrLimitsMarkdown": "Agreement on limited sample behavior leaves the violated full-run retention rule unresolved."
+        },
+        {
+          "optionId": "D",
+          "satisfiesMarkdown": "Locates the lost ID and tests its removal rule against retention requirements.",
+          "failsOrLimitsMarkdown": "The explanation must be checked against actual records; neither zero runtime errors nor an assistant’s narrative proves correctness."
+        }
+      ],
+      "closestDistractorIds": [
+        "B"
+      ],
+      "vocabulary": [
+        {
+          "term": "Invariant",
+          "definition": "A rule that must remain true across the whole transformation, such as preserving every registration once."
+        },
+        {
+          "term": "Reconciliation",
+          "definition": "Comparing corresponding input and output records to account for every inclusion or omission."
+        }
+      ],
+      "sourceChecks": [
+        {
+          "sourceIndex": 0,
+          "claim": "Check real input/output counts and missing rows, and request a plain-language replay of transformation logic.",
+          "evidenceLocator": "AI source check, 2026-10-17; human check pending. https://agentfactory.panaversity.org/docs/code-you-never-write-crash-course — 6. Verifying work you cannot read"
+        }
+      ],
+      "approval": {
+        "status": "approved",
+        "reviewId": "gp2-intermediate-q12-v1"
+      }
+    },
+    {
+      "questionId": "Q18",
+      "sourceFingerprint": "sha256:q1:7c8aa2c80923840442570680195933c5f185099ba20071a8980e3d6d28c8fcff",
+      "hints": [
+        "Identify the stated calculation and which displayed figures depend on it.",
+        "Recalculate each period using its own row; keep refunds attached to the period that supplied them.",
+        "After correcting a figure, what other reported values might need a consistency check, and how could you verify them independently?"
+      ],
+      "decisiveCriteria": [
+        "For each month, net receipts equal receipts minus that month’s refunds; no other adjustments are allowed.",
+        "Correct both any wrong monthly figure and the total that depends on it.",
+        "The corrected period sum must equal total receipts minus total refunds."
+      ],
+      "reasoningMarkdown": "April is 420−20=400, May is 360−40=320 and June is 300−0=300. Therefore the quarter is 400+320+300=1,020. Independently, receipts total 1,080 and refunds total 60; 1,080−60=1,020. B repairs May and D repairs the dependent total. A leaves a wrong month and introduces a wrong total; C moves April’s refunds into May; E invents an adjustment the stem excludes. The original course supports checking analysis, while these amounts come from the question’s source rows.",
+      "optionComparisons": [
+        {
+          "optionId": "A",
+          "satisfiesMarkdown": "Recognizes that the quarter total needs attention.",
+          "failsOrLimitsMarkdown": "1,000 is not supported, and retaining the displayed months leaves their sum at 1,040."
+        },
+        {
+          "optionId": "B",
+          "satisfiesMarkdown": "Correctly recalculates May as 360−40=320.",
+          "failsOrLimitsMarkdown": "Does not by itself fix the quarter total; the two-response task also needs D."
+        },
+        {
+          "optionId": "C",
+          "satisfiesMarkdown": "Uses refund figures that appear in the source.",
+          "failsOrLimitsMarkdown": "Assigning both months’ refunds to May changes their period allocation and yields the wrong May amount."
+        },
+        {
+          "optionId": "D",
+          "satisfiesMarkdown": "Corrects the total to 1,020 and supplies an independent source-total cross-check.",
+          "failsOrLimitsMarkdown": "Depends on corrected component figures; it complements B rather than excusing the wrong May display."
+        },
+        {
+          "optionId": "E",
+          "satisfiesMarkdown": "Attempts to explain why the reported total differs.",
+          "failsOrLimitsMarkdown": "The proposed timing adjustment is invented and forbidden by the no-other-adjustments condition."
+        }
+      ],
+      "closestDistractorIds": [
+        "A",
+        "C"
+      ],
+      "vocabulary": [
+        {
+          "term": "Net receipts",
+          "definition": "Receipts after subtracting refunds under the rule given here."
+        },
+        {
+          "term": "Cross-check",
+          "definition": "A second calculation path used to detect an error in the first."
+        }
+      ],
+      "sourceChecks": [
+        {
+          "sourceIndex": 0,
+          "claim": "Check data-analysis inputs and totals rather than trusting a plausible generated result.",
+          "evidenceLocator": "AI source check, 2026-10-17; human check pending. https://agentfactory.panaversity.org/docs/ai-prompting-2026 — 10. Data analysis (the model writes and runs code)"
+        },
+        {
+          "sourceIndex": 1,
+          "claim": "Use known-answer arithmetic and reality checks to validate transformations.",
+          "evidenceLocator": "AI source check, 2026-10-17; human check pending. https://agentfactory.panaversity.org/docs/code-you-never-write-crash-course — 6. Verifying work you cannot read"
+        }
+      ],
+      "approval": {
+        "status": "approved",
+        "reviewId": "gp2-intermediate-q18-v1"
+      }
+    },
+    {
+      "questionId": "Q25",
+      "sourceFingerprint": "sha256:q1:60acadbaed616dcac911d547fb14ff6f62f84f23ee5c729fa2c908f896aa4e1e",
+      "hints": [
+        "What has the team checked about the shortlist, and what part of the decision process is still unexamined?",
+        "Distinguish evidence that selected people qualify from evidence that every exclusion is justified.",
+        "Consider whether a proposed review tests decisions under the existing rules or introduces a different allocation rule."
+      ],
+      "decisiveCriteria": [
+        "Both application routes are permitted and the same availability/experience criteria apply.",
+        "Selected applicants qualify, but no excluded applications have been checked.",
+        "The route pattern warrants investigation; it is not itself proof of unfair treatment or authorization for quotas."
+      ],
+      "reasoningMarkdown": "A reviews the decisions that could be hidden by looking only at successful applicants: exclusions from both routes alongside selected cases, all under the same criteria. B can reproduce the same blind spot even if the assistants agree. D can show that selected applicants are suitable while missing qualified excluded applicants. C changes allocation before investigating or obtaining authorization for a different rule. The counts flag a question to investigate; they cannot establish the cause of the pattern.",
+      "optionComparisons": [
+        {
+          "optionId": "A",
+          "satisfiesMarkdown": "Checks exclusions and inclusions across both routes against unchanged rules.",
+          "failsOrLimitsMarkdown": "Findings still require case evidence; the observed route difference alone cannot establish unfairness."
+        },
+        {
+          "optionId": "B",
+          "satisfiesMarkdown": "Provides a second shortlist for comparison.",
+          "failsOrLimitsMarkdown": "Shared instructions or assumptions may repeat unsupported exclusions; agreement does not inspect their justification."
+        },
+        {
+          "optionId": "C",
+          "satisfiesMarkdown": "Responds to the lack of telephone applicants on the shortlist.",
+          "failsOrLimitsMarkdown": "Imposes a proportional allocation before establishing causes or approval for changing criteria."
+        },
+        {
+          "optionId": "D",
+          "satisfiesMarkdown": "Rechecks selected suitability and compares experience averages.",
+          "failsOrLimitsMarkdown": "Selected-case quality and averages can conceal unsupported exclusions and do not explain the telephone decisions."
+        }
+      ],
+      "closestDistractorIds": [
+        "D",
+        "B"
+      ],
+      "vocabulary": [
+        {
+          "term": "Exclusion review",
+          "definition": "Inspection of decisions that removed candidates, including whether each removal follows the agreed rules."
+        },
+        {
+          "term": "Pattern versus cause",
+          "definition": "A numerical difference can prompt investigation without proving why it occurred."
+        }
+      ],
+      "sourceChecks": [
+        {
+          "sourceIndex": 0,
+          "claim": "Inspect exclusions as well as selected cases when reviewing potentially uneven outcomes.",
+          "evidenceLocator": "AI source check, 2026-10-17; human check pending. https://agentfactory.panaversity.org/docs/governance-risk-responsible-use-crash-course — 4.1 Look at who was excluded"
+        }
+      ],
+      "approval": {
+        "status": "approved",
+        "reviewId": "gp2-intermediate-q25-v1"
+      }
+    },
+    {
+      "questionId": "Q26",
+      "sourceFingerprint": "sha256:q1:f63805bcb80dfbafac7d4dbf2b52f95ea8c9acfdfd5b0a2a90ec38a650d92298",
+      "hints": [
+        "Read the coordinator’s action separately for each contribution rather than judging the plan as a whole.",
+        "Compare what AI originally supplied with what survives in the coordinator’s final plan.",
+        "Does a stated reason describe a change to a proposal, or only explain the decision made about it?"
+      ],
+      "decisiveCriteria": [
+        "The visitor pack changes from twelve pages to two while retaining its purpose.",
+        "The luggage desk is an explicitly new idea kept for train arrivals; no change to the desk proposal is stated.",
+        "The access check was absent from AI’s plan and was added by the coordinator.",
+        "Each label must describe the action actually taken and its stated reason, not approval of the whole plan."
+      ],
+      "reasoningMarkdown": "A records a modification: twelve pages become two for quick reading. C records a surfaced idea: the coordinator keeps a new luggage desk because train arrivals make it useful. D records a missed requirement: she supplies the absent step-free entrance check. B wrongly calls the changed pack unchanged acceptance. E mistakes a reason for keeping the desk for evidence that the proposal itself changed. The three correct entries cover three distinct contributions; a positive reaction to the whole plan would not record those decisions.",
+      "optionComparisons": [
+        {
+          "optionId": "A",
+          "satisfiesMarkdown": "Records the actual reduction in length and the quick-reading reason.",
+          "failsOrLimitsMarkdown": "This concerns the pack modification only; it does not describe what happened to the desk or access check."
+        },
+        {
+          "optionId": "B",
+          "satisfiesMarkdown": "Retains the pack’s general purpose.",
+          "failsOrLimitsMarkdown": "ACCEPT without changes contradicts the stated reduction from twelve pages to two."
+        },
+        {
+          "optionId": "C",
+          "satisfiesMarkdown": "Records a new kept idea and the train-arrival reason.",
+          "failsOrLimitsMarkdown": "No desk modification is supplied by the stem; the receipt should not invent one."
+        },
+        {
+          "optionId": "D",
+          "satisfiesMarkdown": "Records the omitted requirement added by the human and its step-free-access reason.",
+          "failsOrLimitsMarkdown": "Describes a missing check, not proof that access has already been confirmed."
+        },
+        {
+          "optionId": "E",
+          "satisfiesMarkdown": "Recognizes that the coordinator supplied a reason concerning train arrivals.",
+          "failsOrLimitsMarkdown": "A reason for retention is not a change to the desk; MODIFY is unsupported."
+        }
+      ],
+      "closestDistractorIds": [
+        "E"
+      ],
+      "vocabulary": [
+        {
+          "term": "Reasoning receipt",
+          "definition": "A record of a person’s decision about each AI contribution together with the reason."
+        },
+        {
+          "term": "ACCEPT",
+          "definition": "Retain a contribution without changing it."
+        },
+        {
+          "term": "REJECT",
+          "definition": "Remove a contribution from the final work."
+        },
+        {
+          "term": "MODIFY",
+          "definition": "Change a contribution’s content or form; a reason for retention alone is not a modification."
+        },
+        {
+          "term": "SURFACED",
+          "definition": "Record a new idea supplied by AI that the person decides to keep."
+        },
+        {
+          "term": "MISSED",
+          "definition": "Record a requirement omitted by AI and added by the person."
+        }
+      ],
+      "sourceChecks": [
+        {
+          "sourceIndex": 0,
+          "claim": "Record each contribution’s decision and reason, distinguishing changed work, new kept ideas and omissions.",
+          "evidenceLocator": "AI source check, 2026-10-17; human check pending. https://agentfactory.panaversity.org/docs/how-to-think-ai-era — Discipline 2: The Reasoning Receipt"
+        }
+      ],
+      "approval": {
+        "status": "approved",
+        "reviewId": "gp2-intermediate-q26-v1"
+      }
+    },
+    {
+      "questionId": "Q33",
+      "sourceFingerprint": "sha256:q1:8ecba5c6203302ec120128e096ba85b94798d01d08a1b9335debfd20c7c5e521",
+      "hints": [
+        "Define the unit being measured: what work must finish before a brief is usable?",
+        "For each method, include every staff-time stage inside that measurement boundary.",
+        "Compare the completed-work totals, then consider how many observations support a claim that the difference will persist."
+      ],
+      "decisiveCriteria": [
+        "Total staff time includes drafting and checking, including corrections and final-file preparation.",
+        "Both finished briefs meet the same quality standard; tool charges are equal and negligible.",
+        "There is one parallel trial, so repeatability has not been established."
+      ],
+      "reasoningMarkdown": "Existing completion takes 18+12=30 minutes. AI-assisted completion takes 4+23=27 minutes, saving three minutes overall. Drafting alone saves fourteen minutes, but checking grows by eleven, leaving three net. A states that observed benefit and calls for more matched-quality cycles. B excludes necessary checking, C judges checking alone, and D compares an old total with only the new drafting stage. Workflow section 16 supports baselines, whole-workflow human costs and repeated parallel comparisons. AI verification is complete; independent human verification is pending.",
+      "optionComparisons": [
+        {
+          "optionId": "A",
+          "satisfiesMarkdown": "Compares 30 with 27 minutes and calls for further equal-quality trials.",
+          "failsOrLimitsMarkdown": "One cycle cannot establish sustained savings or justify a general performance guarantee."
+        },
+        {
+          "optionId": "B",
+          "satisfiesMarkdown": "Correctly identifies fourteen fewer drafting minutes.",
+          "failsOrLimitsMarkdown": "Checking is required to obtain a usable brief and cannot be moved outside the stated total-time objective."
+        },
+        {
+          "optionId": "C",
+          "satisfiesMarkdown": "Correctly observes eleven more checking minutes.",
+          "failsOrLimitsMarkdown": "That stage increase is outweighed by the drafting reduction; the full method is three minutes faster in this trial."
+        },
+        {
+          "optionId": "D",
+          "satisfiesMarkdown": "Uses the old thirty-minute total as a starting point.",
+          "failsOrLimitsMarkdown": "Subtracts only new drafting time and omits twenty-three necessary checking minutes, overstating the saving."
+        }
+      ],
+      "closestDistractorIds": [
+        "B"
+      ],
+      "vocabulary": [
+        {
+          "term": "Measurement boundary",
+          "definition": "The stages counted when comparing the same completed outcome."
+        },
+        {
+          "term": "Parallel trial",
+          "definition": "Comparison of methods on equivalent work while keeping the quality standard consistent."
+        }
+      ],
+      "sourceChecks": [
+        {
+          "sourceIndex": 0,
+          "claim": "Section 16 uses baseline measurement, includes human work in costs and compares parallel cycles.",
+          "evidenceLocator": "AI source verification completed, 2026-10-17; independent human verification pending. https://agentfactory.panaversity.org/docs/workflow-design-diagnosis-crash-course — 16. Measure the thing you actually care about (original passage inspected through course-site navigation; rendered lines 689–711)."
+        }
+      ],
+      "approval": {
+        "status": "approved",
+        "reviewId": "gp2-intermediate-q33-v1"
+      }
+    },
+    {
+      "questionId": "Q59",
+      "sourceFingerprint": "sha256:q1:9960556ebecbff7485993dfb158e9bd712cf77eee6ba9f158f0d8513a816c5ca",
+      "hints": [
+        "List the conditions under which the current workflow was approved.",
+        "Write a brief before-and-after description of each proposal. Which facts about the approved workflow have actually changed?",
+        "Compare the proposal with the approved baseline, and keep the need for a new review separate from its eventual outcome."
+      ],
+      "decisiveCriteria": [
+        "Approval covers public FAQs, one model family, internal drafts, team-folder storage and supervisor review, with no sending.",
+        "Changes to data, capability, model, audience or consequences require a governance re-check before use.",
+        "A different date or heading style alone is not a stated trigger when all material conditions remain unchanged.",
+        "Re-check means evaluate the proposed change; it does not mean automatically reject it."
+      ],
+      "reasoningMarkdown": "A crosses the internal-draft boundary by enabling messages to customers. D introduces named employee complaint data beyond the public FAQ inputs. E changes model family. Each changes a stated review-trigger dimension, even if layout stays familiar. B explicitly preserves the approved material conditions; C explicitly changes only heading style while preserving those conditions. The required set is A, D and E. Review may approve or reject a change after evaluation; none is automatically banned by this question.",
+      "optionComparisons": [
+        {
+          "optionId": "A",
+          "satisfiesMarkdown": "Describes a concrete new capability and customer audience.",
+          "failsOrLimitsMarkdown": "Those changes require review; retaining the answer layout does not carry forward approval for external sending."
+        },
+        {
+          "optionId": "B",
+          "satisfiesMarkdown": "Explicitly retains the same inputs, model, permissions, purpose, destination and review.",
+          "failsOrLimitsMarkdown": "A new date by itself does not meet a stated change trigger; this assumes the confirmation that nothing material changed is true."
+        },
+        {
+          "optionId": "C",
+          "satisfiesMarkdown": "Limits the change to heading style and explicitly preserves material conditions.",
+          "failsOrLimitsMarkdown": "No stated trigger changes in this proposal; this conclusion would differ if audience, content or capability also changed."
+        },
+        {
+          "optionId": "D",
+          "satisfiesMarkdown": "Identifies a new source with named employee information.",
+          "failsOrLimitsMarkdown": "The public-data approval does not cover the new data type and sensitivity; unchanged output format does not remove the review requirement."
+        },
+        {
+          "optionId": "E",
+          "satisfiesMarkdown": "Explicitly changes the model family.",
+          "failsOrLimitsMarkdown": "That is itself a stated review trigger even with the same sources and output layout."
+        }
+      ],
+      "closestDistractorIds": [
+        "C"
+      ],
+      "vocabulary": [
+        {
+          "term": "Approval scope",
+          "definition": "The conditions and permitted operations covered by a particular approval."
+        },
+        {
+          "term": "Review trigger",
+          "definition": "A change that requires reassessment before the revised workflow is used."
+        }
+      ],
+      "sourceChecks": [
+        {
+          "sourceIndex": 0,
+          "claim": "Reassess approval when material workflow conditions change, including model, data, audience or action scope.",
+          "evidenceLocator": "AI source check, 2026-10-17; human check pending. https://agentfactory.panaversity.org/docs/governance-risk-responsible-use-crash-course — 8.5 Re-check when the workflow changes"
+        }
+      ],
+      "approval": {
+        "status": "approved",
+        "reviewId": "gp2-intermediate-q59-v1"
+      }
+    }
+  ]
+}

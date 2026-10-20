@@ -82,7 +82,7 @@ test('triple-click starts empty and stays empty after reload and submission', as
   const original = await expectEmptyExam(page);
   await reloadPage(page);
   expect((await storedAttempts(page))[0].answers).toEqual({});
-  await page.getByRole('button', { name: 'Resume attempt', exact: true }).click();
+  await expect(page.getByRole('heading', { name: /^Question \d+ of 60$/ })).toBeVisible();
   await expectEmptyExam(page);
   await page.getByRole('button', { name: 'Review & submit', exact: true }).click();
   await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
@@ -112,7 +112,7 @@ test('replacement double-click opens one fresh empty attempt', async ({ page }) 
   const original = await expectEmptyExam(page);
   await page.locator('.option-card').first().click();
   await expect.poll(async () => (await storedAttempts(page))[0].answers).toEqual({ Q1: ['A'] });
-  await page.getByRole('button', { name: 'Attempt history', exact: true }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await page.getByRole('button', { name: 'Go to attempt history', exact: true }).click();
   await page.getByRole('button', { name: 'Start another exam', exact: true }).click();
   await page.getByRole('button', { name: 'Start Exam', exact: true }).click();

@@ -5,12 +5,23 @@ import { createAttempt } from '../../src/domain/attempt';
 import { syntheticBank } from '../fixtures/syntheticBank';
 
 type Event = { event: string; properties: Record<string, unknown> };
-test.beforeEach(async ({ context }) => {
+// The real lazy SDK batches delivery. Bound transport assertions to 10s (cold import +
+// its normal batch interval), without changing SDK settings or the 45s test deadline.
+const delivered = <T>(read: () => T) => expect.poll(read, { timeout: 10000, message: 'Synthetic ingestion received the expected SDK batch' });
+const observations = new WeakMap<BrowserContext, { started: number; batches: { receivedAfterMs: number; count: number }[]; messages: string[] }>();
+test.beforeEach(async ({ context, page }) => {
+  const observation = { started: Date.now(), batches: [] as { receivedAfterMs: number; count: number }[], messages: [] as string[] };
+  observations.set(context, observation);
+  page.on('console', message => { if (['error', 'warning'].includes(message.type())) observation.messages.push(message.type() + ': ' + message.text()); });
+  page.on('pageerror', error => observation.messages.push('pageerror: ' + error.message));
   // Model a human browser; the real SDK intentionally drops webdriver/bot traffic.
   await context.addInitScript(() => {
     Object.defineProperty(Navigator.prototype, 'webdriver', { get: () => false });
     Object.defineProperty(Navigator.prototype, 'userAgentData', { get: () => undefined });
   });
+});
+test.afterEach(async ({ context }, info) => {
+  await info.attach('synthetic-delivery-and-console', { contentType: 'application/json', body: JSON.stringify(observations.get(context), null, 2) });
 });
 async function collect(context: BrowserContext) {
   const events: Event[] = [];
@@ -29,7 +40,10 @@ async function collect(context: BrowserContext) {
         if (form.get('data')) value = Buffer.from(form.get('data')!, 'base64').toString();
       }
       const payload = JSON.parse(value) as Event | Event[] | { batch: Event[] };
-      events.push(...(Array.isArray(payload) ? payload : 'batch' in payload ? payload.batch : [payload]));
+      const batch = Array.isArray(payload) ? payload : 'batch' in payload ? payload.batch : [payload];
+      events.push(...batch);
+      const observation = observations.get(context)!;
+      observation.batches.push({ receivedAfterMs: Date.now() - observation.started, count: batch.length });
     }
     await route.fulfill({ status: 200, contentType: 'application/json',
       headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': 'GET,POST,OPTIONS' },
@@ -45,11 +59,11 @@ async function signIn(page: Page, email = 'alice@example.test') {
   await dialog.getByLabel('Password', { exact: true }).fill('synthetic-password');
   await dialog.getByLabel('Keep me signed in on this device').check();
   await dialog.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Account settings', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Account settings', exact: true })).toBeVisible();
 }
 
 async function signOut(page: Page) {
-  await page.getByRole('button', { name: 'Account settings', exact: true }).click();
+  await page.getByRole('link', { name: 'Account settings', exact: true }).click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
 }
@@ -58,10 +72,10 @@ test('guest identity survives reload, virtual views and completion count once wi
   const events = await collect(context); const server = mockAccountServer(); await server.attach(context);
   // Recovery fragments are separately covered by the scrubber unit tests.
   await page.goto('/?email=private@example.test');
-  await expect.poll(() => events.filter(item => item.event === '$pageview').length).toBe(1);
+  await delivered(() => events.filter(item => item.event === '$pageview').length).toBe(1);
   const guest = events[0].properties.distinct_id;
   await page.reload();
-  await expect.poll(() => events.filter(item => item.event === '$pageview').length).toBe(2);
+  await delivered(() => events.filter(item => item.event === '$pageview').length).toBe(2);
   expect(events.filter(item => item.event === '$pageview')[1].properties.distinct_id).toBe(guest);
   await page.getByRole('button', { name: 'Start exam', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Start Exam', exact: true }).click();
@@ -70,12 +84,12 @@ test('guest identity survives reload, virtual views and completion count once wi
   await page.getByRole('button', { name: 'Submit exam', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm submission', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
-  await expect.poll(() => events.filter(item => item.event === 'exam_completed').length).toBe(1);
+  await delivered(() => events.filter(item => item.event === 'exam_completed').length).toBe(1);
   expect(events.filter(item => item.event === 'exam_started')).toHaveLength(1);
   expect(events.filter(item => item.event === 'review_opened')).toHaveLength(1);
-  expect(events.filter(item => item.event === '$pageview').map(item => item.properties.$pathname)).toEqual(['/start', '/start', '/exam', '/results']);
+  await delivered(() => events.filter(item => item.event === '$pageview').map(item => item.properties.$pathname)).toEqual(['/start', '/start', '/exam', '/results']);
   await page.reload();
-  await expect.poll(() => events.filter(item => item.event === '$pageview').length).toBe(5);
+  await delivered(() => events.filter(item => item.event === '$pageview').map(item => item.properties.$pathname)).toEqual(['/start', '/start', '/exam', '/results', '/results']);
   expect(events.filter(item => item.event === 'exam_completed')).toHaveLength(1);
   const data = JSON.stringify(events);
   expect(data).not.toContain('private@example.test');
@@ -90,19 +104,19 @@ test('signup and explicit login are distinct from restoration, logout and accoun
   await dialog.getByLabel('Email', { exact: true }).fill('synthetic-new@example.test');
   await dialog.getByLabel('Password', { exact: true }).fill('synthetic-password');
   await dialog.getByRole('button', { name: 'Create account', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Account settings', exact: true })).toBeVisible();
-  await expect.poll(() => events.filter(item => item.event === 'signup_succeeded').length).toBe(1);
+  await expect(page.getByRole('link', { name: 'Account settings', exact: true })).toBeVisible();
+  await delivered(() => events.filter(item => item.event === 'signup_succeeded').length).toBe(1);
   await signOut(page);
   await signIn(page);
-  await expect.poll(() => events.filter(item => item.event === 'login_succeeded').length).toBe(1);
+  await delivered(() => events.filter(item => item.event === 'login_succeeded').length).toBe(1);
   expect(events.find(item => item.event === 'login_succeeded')?.properties.distinct_id).toBe(userA);
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Account settings', exact: true })).toBeVisible();
-  await expect.poll(() => events.filter(item => item.event === 'signed_in_activity' && item.properties.distinct_id === userA).length).toBe(2);
+  await expect(page.getByRole('link', { name: 'Account settings', exact: true })).toBeVisible();
+  await delivered(() => events.filter(item => item.event === 'signed_in_activity' && item.properties.distinct_id === userA).length).toBe(2);
   expect(events.filter(item => item.event === 'login_succeeded')).toHaveLength(1);
   await signOut(page);
   await signIn(page, 'bob@example.test');
-  await expect.poll(() => events.filter(item => item.event === 'login_succeeded').length).toBe(2);
+  await delivered(() => events.filter(item => item.event === 'login_succeeded').length).toBe(2);
   expect(events.filter(item => item.event === 'login_succeeded')[1].properties.distinct_id).toBe(userB);
   expect(JSON.stringify(events)).not.toContain('alice@example.test');
   expect(JSON.stringify(events)).not.toContain('synthetic-password');
@@ -124,7 +138,7 @@ test('failed and cancelled auth emits no success or identified events', async ({
   await dialog.getByRole('button', { name: 'Sign in', exact: true }).click();
   await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await expect.poll(() => events.filter(item => item.event === '$pageview').length).toBe(1);
+  await delivered(() => events.filter(item => item.event === '$pageview').length).toBe(1);
   expect(events.some(item => ['login_succeeded', 'signup_succeeded', '$identify', 'signed_in_activity'].includes(item.event))).toBe(false);
 });
 
@@ -142,9 +156,9 @@ test('engagement increments, report backup and PDF success use metadata only', a
   await page.getByRole('button', { name: 'Export report (PDF)' }).click();
   await expect(page.getByRole('button', { name: 'Export report (PDF)' })).toBeEnabled({ timeout: 40000 });
   await page.clock.runFor(65_000);
-  await expect.poll(() => events.filter(item => item.event === 'engagement_time').length).toBeGreaterThan(0);
-  expect(events.some(item => item.event === 'report_backup_succeeded')).toBe(true);
-  expect(events.some(item => item.event === 'pdf_export_succeeded')).toBe(true);
+  await delivered(() => events.filter(item => item.event === 'engagement_time').length).toBeGreaterThan(0);
+  await delivered(() => events.filter(item => item.event === 'report_backup_succeeded').length).toBe(1);
+  await delivered(() => events.filter(item => item.event === 'pdf_export_succeeded').length).toBe(1);
   const engagement = events.filter(item => item.event === 'engagement_time');
   expect(engagement.every(item => Number(item.properties.active_seconds) > 0)).toBe(true);
   expect(engagement.some(item => item.properties.account_state === 'authenticated' && item.properties.distinct_id === userA)).toBe(true);
@@ -174,11 +188,12 @@ test('automatic expiry records a saved completion once with timeout metadata', a
   }, attempt);
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible({ timeout: 20000 });
-  await expect.poll(() => events.filter(item => item.event === 'exam_completed').length).toBe(1);
+  await delivered(() => events.filter(item => item.event === 'exam_completed').length).toBe(1);
   expect(events.find(item => item.event === 'exam_completed')?.properties).toMatchObject({
     attempt_id: attempt.id, submission_reason: 'timeout', elapsed_seconds: bank.durationMinutes * 60,
   });
   await page.reload();
-  await expect.poll(() => events.filter(item => item.event === '$pageview' && item.properties.$pathname === '/start').length).toBe(2);
+  await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
+  await delivered(() => events.filter(item => item.event === '$pageview').map(item => item.properties.$pathname)).toEqual(['/start', '/results', '/results']);
   expect(events.filter(item => item.event === 'exam_completed')).toHaveLength(1);
 });

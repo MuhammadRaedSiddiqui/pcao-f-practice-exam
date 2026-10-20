@@ -69,6 +69,8 @@ for (const viewport of viewports) {
     await page.screenshot({ path: `screenshots/exam-results-review-${viewport.name}.png` });
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await reloadPage(page);
+    await expect(page.getByRole('heading', { name: 'Your results', exact: true })).toBeVisible();
+    await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Your attempts' })).toBeVisible();
     await page.getByRole('button', { name: 'Open report' }).click();
     await expect(page.locator('.result-number')).toHaveText('33 / 1000');
@@ -116,7 +118,7 @@ test('an existing attempt keeps its snapshot when a newer bank appears', async (
   expect(afterResize.currentQuestionId).toBe(beforeResize.currentQuestionId);
   expect(afterResize.answers).toEqual(beforeResize.answers);
   expect(afterResize.flags).toEqual(beforeResize.flags);
-  await page.getByRole('button', { name: 'Attempt history' }).click();
+  await page.getByRole('banner').getByRole('link', { name: 'Attempt history', exact: true }).click();
   await page.getByRole('button', { name: 'Go to attempt history' }).click();
   await expect(page.locator('.history-row').first()).toContainText('Dataset 1.1.0');
 
@@ -124,6 +126,8 @@ test('an existing attempt keeps its snapshot when a newer bank appears', async (
     await route.fulfill({ json: { ...published, version: '1.2.0-test' } });
   });
   await reloadPage(page);
+  await expect(page).toHaveURL(/\/history$/);
+  await page.getByRole('banner').getByRole('link', { name: 'Home', exact: true }).click();
   await expect(page.getByText('Dataset 1.2.0-test')).toBeVisible();
   await page.getByRole('button', { name: 'Resume attempt' }).click();
   await expect(page.getByRole('heading', { name: 'Question 2 of 60' })).toBeVisible();

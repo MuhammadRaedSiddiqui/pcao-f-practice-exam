@@ -47,15 +47,17 @@ export function accountRepository(client: SupabaseClient) {
       if (rows.some(row => row.user_id !== userId || row.deleted_at)) throw new ArchiveError('Account history ownership mismatch.', 'invalid');
       return rows;
     },
-    async receipt(userId: string, attemptId: string): Promise<CloudReport | null> {
-      const { data, error } = await client.from('attempt_reports').select(REPORT_COLUMNS).eq('user_id', userId).eq('attempt_id', attemptId).maybeSingle();
+    async receipt(userId: string, attemptId: string, signal?: AbortSignal): Promise<CloudReport | null> {
+      const query = client.from('attempt_reports').select(REPORT_COLUMNS).eq('user_id', userId).eq('attempt_id', attemptId);
+      const { data, error } = await (signal ? query.abortSignal(signal) : query).maybeSingle();
       if (error) throw errorFrom(error);
       const row = data ? parseCloudMetadata(data) : null;
       if (row && row.user_id !== userId) throw new ArchiveError('Account ownership mismatch.', 'invalid');
       return row;
     },
-    async download(userId: string, reportId: string): Promise<{ row: CloudReport; attempt: Attempt }> {
-      const { data, error } = await client.from('attempt_reports').select(REPORT_COLUMNS + ',payload').eq('user_id', userId).eq('report_id', reportId).is('deleted_at', null).single();
+    async download(userId: string, reportId: string, signal?: AbortSignal): Promise<{ row: CloudReport; attempt: Attempt }> {
+      const query = client.from('attempt_reports').select(REPORT_COLUMNS + ',payload').eq('user_id', userId).eq('report_id', reportId).is('deleted_at', null);
+      const { data, error } = await (signal ? query.abortSignal(signal) : query).single();
       if (error) throw errorFrom(error);
       const row = parseCloudMetadata(data);
       return { row, attempt: await validateCloudPayload(row, (data as unknown as { payload: unknown }).payload, userId) };

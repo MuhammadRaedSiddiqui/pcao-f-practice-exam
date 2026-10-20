@@ -1,0 +1,153 @@
+{
+  "provenance": "Independent Python 3 hashlib SHA-256 and json compact UTF-8; synthetic only",
+  "source": {
+    "schemaVersion": 1,
+    "examId": "synthetic-vector",
+    "bankVersion": "1.2.3",
+    "difficulty": "intermediate"
+  },
+  "domain": {
+    "id": "D1",
+    "title": "Synthetic domain é",
+    "expectedQuestionCount": 8
+  },
+  "question": {
+    "id": "Q1",
+    "primaryDomain": "D1",
+    "selectionCount": 2,
+    "stemMarkdown": "Synthetic **stem**\nCafé / é / 🧪",
+    "options": [
+      {
+        "id": "A",
+        "textMarkdown": "Synthetic A"
+      },
+      {
+        "id": "B",
+        "textMarkdown": "Synthetic B"
+      },
+      {
+        "id": "C",
+        "textMarkdown": "Synthetic C"
+      }
+    ],
+    "correctOptionIds": [
+      "A",
+      "C"
+    ],
+    "explanationMarkdown": "Synthetic overall explanation",
+    "optionExplanations": {
+      "C": "Synthetic C explanation",
+      "A": "Synthetic A explanation",
+      "B": "Synthetic B explanation"
+    },
+    "sources": [
+      {
+        "courseTitle": "Synthetic course",
+        "sectionHeading": "Synthetic section",
+        "url": "https://example.test/a?x=1&y=2"
+      },
+      {
+        "courseTitle": "Synthetic second",
+        "sectionHeading": "Synthetic other"
+      }
+    ]
+  },
+  "entry": {
+    "questionId": "Q1",
+    "sourceFingerprint": "sha256:q1:0a7aaf96f46276d63dcdc74787481a0e1def245b4145df84c7e8e879da592d66",
+    "hints": [
+      "Synthetic ask",
+      "Synthetic constraints",
+      "Synthetic compare"
+    ],
+    "decisiveCriteria": [
+      "Synthetic first",
+      "Synthetic second"
+    ],
+    "reasoningMarkdown": "Synthetic reasoning é\n",
+    "optionComparisons": [
+      {
+        "optionId": "A",
+        "satisfiesMarkdown": "Synthetic strength",
+        "failsOrLimitsMarkdown": "Synthetic limit"
+      },
+      {
+        "optionId": "B",
+        "satisfiesMarkdown": "Synthetic strength",
+        "failsOrLimitsMarkdown": "Synthetic limit"
+      },
+      {
+        "optionId": "C",
+        "satisfiesMarkdown": "Synthetic strength",
+        "failsOrLimitsMarkdown": "Synthetic limit"
+      }
+    ],
+    "closestDistractorIds": [
+      "B"
+    ],
+    "vocabulary": [
+      {
+        "term": "Synthetic term",
+        "definition": "Synthetic definition"
+      }
+    ],
+    "sourceChecks": [
+      {
+        "sourceIndex": 0,
+        "claim": "Synthetic claim",
+        "evidenceLocator": "Synthetic locator"
+      }
+    ],
+    "approval": {
+      "status": "approved",
+      "reviewId": "synthetic-vector-review"
+    }
+  },
+  "guideVersion": "1.0.0",
+  "q1": "sha256:q1:0a7aaf96f46276d63dcdc74787481a0e1def245b4145df84c7e8e879da592d66",
+  "q1Canonical": "[\"pcao-f-guided-question\",1,1,\"synthetic-vector\",\"1.2.3\",\"intermediate\",[\"D1\",\"Synthetic domain é\",8],\"Q1\",\"D1\",2,\"Synthetic **stem**\\nCafé / é / 🧪\",[[\"A\",\"Synthetic A\"],[\"B\",\"Synthetic B\"],[\"C\",\"Synthetic C\"]],[\"A\",\"C\"],\"Synthetic overall explanation\",[[\"A\",\"Synthetic A explanation\"],[\"B\",\"Synthetic B explanation\"],[\"C\",\"Synthetic C explanation\"]],[[\"Synthetic course\",\"Synthetic section\",\"https://example.test/a?x=1&y=2\"],[\"Synthetic second\",\"Synthetic other\",null]]]",
+  "g1": "sha256:g1:5db6f6761bb2b6c0fe673850cc19faef7311524ecf138b9340a1ea1eda3495a9",
+  "g1Canonical": "[\"pcao-f-guided-entry\",1,{\"bankVersion\":\"1.2.3\",\"difficulty\":\"intermediate\",\"examId\":\"synthetic-vector\",\"schemaVersion\":1},\"1.0.0\",{\"approval\":{\"reviewId\":\"synthetic-vector-review\",\"status\":\"approved\"},\"closestDistractorIds\":[\"B\"],\"decisiveCriteria\":[\"Synthetic first\",\"Synthetic second\"],\"hints\":[\"Synthetic ask\",\"Synthetic constraints\",\"Synthetic compare\"],\"optionComparisons\":[{\"failsOrLimitsMarkdown\":\"Synthetic limit\",\"optionId\":\"A\",\"satisfiesMarkdown\":\"Synthetic strength\"},{\"failsOrLimitsMarkdown\":\"Synthetic limit\",\"optionId\":\"B\",\"satisfiesMarkdown\":\"Synthetic strength\"},{\"failsOrLimitsMarkdown\":\"Synthetic limit\",\"optionId\":\"C\",\"satisfiesMarkdown\":\"Synthetic strength\"}],\"questionId\":\"Q1\",\"reasoningMarkdown\":\"Synthetic reasoning é\\n\",\"sourceChecks\":[{\"claim\":\"Synthetic claim\",\"evidenceLocator\":\"Synthetic locator\",\"sourceIndex\":0}],\"sourceFingerprint\":\"sha256:q1:0a7aaf96f46276d63dcdc74787481a0e1def245b4145df84c7e8e879da592d66\",\"vocabulary\":[{\"definition\":\"Synthetic definition\",\"term\":\"Synthetic term\"}]}]",
+  "secondQuestion": {
+    "id": "Q1",
+    "primaryDomain": "D1",
+    "selectionCount": 2,
+    "stemMarkdown": "Synthetic **stem**\nCafé / é / 🧪",
+    "options": [
+      {
+        "id": "A",
+        "textMarkdown": "Synthetic A"
+      },
+      {
+        "id": "B",
+        "textMarkdown": "Synthetic B"
+      },
+      {
+        "id": "C",
+        "textMarkdown": "Synthetic C"
+      }
+    ],
+    "correctOptionIds": [
+      "C",
+      "A"
+    ],
+    "explanationMarkdown": "Synthetic overall explanation",
+    "optionExplanations": {
+      "C": "Synthetic C explanation",
+      "A": "Synthetic A explanation",
+      "B": "Synthetic B explanation"
+    },
+    "sources": [
+      {
+        "courseTitle": "Synthetic course",
+        "sectionHeading": "Synthetic section"
+      },
+      {
+        "courseTitle": "Synthetic second",
+        "sectionHeading": "Synthetic other"
+      }
+    ]
+  },
+  "secondQ1": "sha256:q1:b51b2afb7892b5749f46473416a62dd0872be6169b188531e29f4933adbadd8b",
+  "secondQ1Canonical": "[\"pcao-f-guided-question\",1,1,\"synthetic-vector\",\"1.2.3\",\"intermediate\",[\"D1\",\"Synthetic domain é\",8],\"Q1\",\"D1\",2,\"Synthetic **stem**\\nCafé / é / 🧪\",[[\"A\",\"Synthetic A\"],[\"B\",\"Synthetic B\"],[\"C\",\"Synthetic C\"]],[\"C\",\"A\"],\"Synthetic overall explanation\",[[\"A\",\"Synthetic A explanation\"],[\"B\",\"Synthetic B explanation\"],[\"C\",\"Synthetic C explanation\"]],[[\"Synthetic course\",\"Synthetic section\",null],[\"Synthetic second\",\"Synthetic other\",null]]]"
+}

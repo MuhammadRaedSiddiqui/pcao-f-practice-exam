@@ -19,4 +19,5 @@ supabase/
 vite.account-test.config.ts
 vite.analytics-test.config.ts
 vite.recovery-test.config.ts
+vite.guided-test.config.ts
 .env*

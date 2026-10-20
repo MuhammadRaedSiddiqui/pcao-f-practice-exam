@@ -364,3 +364,51 @@ html:has(.dialog[open]) { overflow: hidden; }
 .header-account-email { max-width: 28ch; overflow-wrap: anywhere; text-align: right; color: #526662; font-size: .875rem; }
 .header-auth-hint { flex-basis: 100%; max-width: 42ch; overflow-wrap: anywhere; text-align: right; color: #526662; font-size: .875rem; }
 .header-recovery-notice { flex-basis: 100%; overflow-wrap: anywhere; }
+/* Guided Practice owns these selectors; timed exam layouts retain their rules. */
+.guided-home-card { margin-top: 1.5rem; }
+.guided-landing, .guided-session, .guided-recovery { overflow-wrap: anywhere; min-width: 0; }
+.guided-landing > .card, .guided-session > .card { margin-block: 1.25rem; }
+.guided-actions, .guided-saved-row { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; margin-block: 1rem; }
+.guided-field { display: flex; flex-direction: column; gap: .4rem; margin-block: 1rem; font-weight: 600; max-width: 32rem; }
+.guided-field select { min-height: 44px; max-width: 100%; width: 100%; font: inherit; padding: .5rem; }
+.guided-post-exam { overflow-wrap: anywhere; }
+.guided-post-exam label { display: block; margin-block: .75rem .4rem; font-weight: 600; }
+.guided-post-exam select { min-height: 44px; max-width: 100%; width: 100%; font: inherit; padding: .5rem; }
+.guided-post-exam .dialog__header h2 { min-width: 0; }
+.guided-post-exam .dialog__header > .button { flex-shrink: 0; }
+.guided-options { margin: 1.5rem 0; padding: 0; border: 0; min-width: 0; }
+.guided-options legend { font-weight: 700; margin-bottom: .75rem; }
+.guided-option { display: flex; gap: .75rem; align-items: flex-start; min-height: 44px; padding: .8rem; border: 1px solid #cbd5e1; border-radius: .5rem; margin-block: .6rem; cursor: pointer; }
+.guided-option input { margin-top: .35rem; min-width: 20px; min-height: 20px; accent-color: #2454a6; }
+.guided-option > span { min-width: 0; }
+.guided-option p { margin: .2rem 0; }
+.guided-option:focus-within { outline: 3px solid #2454a6; outline-offset: 2px; }
+.guided-hints { display: grid; gap: .375rem; margin-block: 1rem; }
+.guided-hint-row { min-width: 0; overflow: hidden; border: 1px solid #cdded8; border-radius: 9px; background: #fff; }
+.guided-hint-toggle { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .5rem .75rem; border: 0; background: transparent; color: #125e56; font-weight: 700; text-align: left; cursor: pointer; }
+.guided-hint-toggle:hover:not(:disabled), .guided-hint-toggle[aria-expanded="true"] { background: #e7f3ef; }
+.guided-hint-toggle:focus-visible { outline-offset: -3px; }
+.guided-hint-toggle:disabled { background: #f8faf9; color: #64756f; cursor: not-allowed; }
+.guided-hint-chevron { flex: none; font-size: 1.65rem; line-height: 1; }
+.guided-hint-toggle[aria-expanded="true"] .guided-hint-chevron { transform: rotate(90deg); }
+.guided-hint-content { padding: .25rem 1rem 1rem; }
+.guided-hint-content p { margin: .5rem 0; }
+.guided-hint-content > :last-child, .guided-hint-content .markdown > :last-child { margin-bottom: 0; }
+.guided-feedback { margin-block: 1.5rem; border-top: 1px solid #cbd5e1; padding-top: 1rem; }
+.guided-feedback h5 { font-size: 1rem; }
+.guided-comparison { border-left: 3px solid #cbd5e1; padding-left: 1rem; margin-block: 1.5rem; }
+.guided-saved-row { border-top: 1px solid #cbd5e1; padding-top: 1rem; }
+.guided-saved-row > div { flex: 1 1 15rem; min-width: 0; }
+.guided-landing .dialog__header > .button { flex-shrink: 0; white-space: nowrap; }
+.guided-landing .dialog__header h2 { min-width: 0; }
+@media (max-width: 480px) { .guided-actions > .button, .guided-saved-row > .button { width: 100%; } }
+@media (max-width: 480px) {
+  .guided-post-exam .dialog__header { flex-direction: column-reverse; align-items: stretch; }
+  .guided-post-exam .dialog__header > .button { align-self: flex-end; }
+  .guided-landing .dialog__header { display: flex; flex-direction: column-reverse; align-items: stretch; }
+  .guided-landing .dialog__header > .button { align-self: flex-end; }
+  .guided-landing .dialog__header h2 { width: 100%; }
+}
+
+.guided-navigation { border-block: 1px solid #cdded8; margin-block: 1rem; padding-block: .25rem; }
+.guided-navigation > p { margin-bottom: .5rem; }

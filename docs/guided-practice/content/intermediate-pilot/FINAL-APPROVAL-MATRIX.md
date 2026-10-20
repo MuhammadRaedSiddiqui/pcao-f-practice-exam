@@ -1,0 +1,46 @@
+# Phase 2 — consolidated final ten-question approval matrix
+
+**Current status — 2026-10-18: educational acceptance by owner-authorized waiver.** The owner personally reviewed and accepts all ten questions and their associated hints, reasoning and explanations. The separate independent-human-review requirement is expressly waived for these exact pilot versions. **10/10 owner approvals; 0/10 documented independent human reviews; independent-review requirement waived; 12/12 AI source checks.** No independent human source verification or blind solve-first review is inferred.
+
+The [dated owner decision, rationale and scope](CONTENT-REVIEW-LEDGER.md#owner-educational-acceptance-and-independent-review-waiver--2026-10-18) bind acceptance to these unchanged identities. Original questions/answers/explanations remain in previously approved, unchanged banks; newly authored Guided records are owner-reviewed and accepted. Any later affected record change requires renewed affected educational approval. Phase 7/8 receive no automatic waiver.
+
+| Record | Existing draft SHA-256 | Existing q1 | Existing prospective g1 | Current educational acceptance |
+| --- | --- | --- | --- | --- |
+| `Q4` | `ec2b5a8986bb144ae53b2d7a2027cbd9e658a639dbcd53a122142ddf3e01044d` | `sha256:q1:9a83ec0a394581b92434e2585ca83c5f31c5e5daa8286834040fb6cfaa0306a1` | `sha256:g1:6a2fbf8a697535b62306cbf4f2dc29270cf89ab40549c9ee6d8d7f961476a6df` | Accepted by owner-authorized waiver (2026-10-18) |
+| `Q5` | `d4d96a424115ac6eb0c282d611e436e6a0955514b8240f49808bb6c40b30d09c` | `sha256:q1:ce4cbf6d597d22c22b9fda28adc28c97562edfda5acdbb9618215b402596693e` | `sha256:g1:88b880aaa208bb372735e81ecb95fc97547bdb5a2852d2765999d9af69cb0a5f` | Accepted by owner-authorized waiver (2026-10-18) |
+| `Q6` | `a0b78d6236ecb974b7a8cefcbed7d8836035dfacd5d40ff035df3637157ec51c` | `sha256:q1:6bf7156dbe9af2e8cb7a28d191bca1bb77eb754172ee78246e97eadf83a1fa45` | `sha256:g1:a51817b1730baf110075cc2a45b69d58f22981a1cd0e5a9607e0622ab61fb9a3` | Accepted by owner-authorized waiver (2026-10-18) |
+| `Q10` | `8c962f7eb6caf0a0d18a033dba2e67659a818bf630bd2109bc009498ea027eea` | `sha256:q1:9409e7944553ad094d080a397daff595a9ddc361d09c138d206cd4c8724663c0` | `sha256:g1:029ee148bcb0000a2f264c01d14705b3765e5eb04b73564d3b28ec41f7623ba6` | Accepted by owner-authorized waiver (2026-10-18) |
+| `Q12` | `e2833f3d71d84fa7dd614c70d3a6ae334f5b0e58f7bd082d14dd82beabdd9186` | `sha256:q1:83e2e0474692c99cc4f732bd0c39ebd9439708784d657c4a8d33ec5a125b0e13` | `sha256:g1:865c6477f6da9676310a0bd27f527e1235bc126bc79ce047ef941b501b46de3f` | Accepted by owner-authorized waiver (2026-10-18) |
+| `Q18` | `0e66340a855d171e14a32b8aee5bcf42e2d60c880eb8ef4457ee057c404c5c59` | `sha256:q1:7c8aa2c80923840442570680195933c5f185099ba20071a8980e3d6d28c8fcff` | `sha256:g1:1e313528cde8ed5ee4614299e294e7cb14d2c76400a0c0f08740e7ba81623060` | Accepted by owner-authorized waiver (2026-10-18) |
+| `Q25` | `f07fb75192da9ce8358d9678c42a8b0d05bb5469d1b02062e62dca15fc85bf17` | `sha256:q1:60acadbaed616dcac911d547fb14ff6f62f84f23ee5c729fa2c908f896aa4e1e` | `sha256:g1:8f1c0147f61634b1bb89e36783fba00f8bbc7af31b4c7897f830ea9980a57c82` | Accepted by owner-authorized waiver (2026-10-18) |
+| `Q26` | `b4a60ae9cc2c951eaacfaad104b8cd86db6b3eda0227b65c131c26d3234d29cb` | `sha256:q1:f63805bcb80dfbafac7d4dbf2b52f95ea8c9acfdfd5b0a2a90ec38a650d92298` | `sha256:g1:b5cf42e7cb2efd5b2267a922b3ae01260dda3aae9ed042b97fcda9720baa5377` | Accepted by owner-authorized waiver (2026-10-18) |
+| `Q33` | `d4db6146a8fa2191cd296d019f925a9e6eeed7baee45cb04c9b559da58a34a47` | `sha256:q1:8ecba5c6203302ec120128e096ba85b94798d01d08a1b9335debfd20c7c5e521` | `sha256:g1:3472873a3c414db40859bb26ddaf5d6266b817fe655c9d5e54f9b66db7dfb0aa` | Accepted by owner-authorized waiver (2026-10-18) |
+| `Q59` | `030e6095f6253a11c64019e9b7f7bba70748cb19d0042382ae98de3865bfe105` | `sha256:q1:9960556ebecbff7485993dfb158e9bd712cf77eee6ba9f158f0d8513a816c5ca` | `sha256:g1:3eac27881f33c58c0bea05c6a05a834c0287bc3bfc0dc6585fff6f5abf2faa46` | Accepted by owner-authorized waiver (2026-10-18) |
+
+All records remain runtime drafts with null actual approvedG1. Native accessibility, D14 observations, reliability release dispositions, final Phase 6 acceptance and publication/enablement/deployment decisions remain pending. No production release/catalog change is authorized.
+
+## Historical owner approval and independent-review evidence (2026-10-17)
+
+The table and narrative below preserve the original approvals, dates and zero independent-review evidence. “Pending” describes the unperformed review, whose requirement is now waived for this pilot; it is not a remaining educational acceptance blocker. The historical six-column rows remain unchanged.
+
+
+**Phase 5 reconciliation, 17 October 2026:** Owner approval remains 10/10 for the unchanged exact drafts; independent human review remains 0/10 and educational acceptance is pending. The later conditional Phase 3/4 acceptance and synthetic-only Phase 5 authorization change internal implementation scope only. Historical phase/publication stop statements below describe their original handoff; no content approval fields changed.
+
+Prepared 2026-10-17 after the owner-authorized source-status corrections. **0/10 documented independent human reviews; 10/10 final owner approvals.** All entries remain drafts. “AI verified” records source inspection only, not human verification. Prospective g1 uses the existing Phase 1 contract on the test-only approved-status projection; every actual approved digest remains null.
+
+The repository owner is assigned independently from the AI author as human reviewer and separately as final content approver. The owner’s direct statement “i approve the ten questions” is recorded on 2026-10-17, bound to every final draft hash/prospective g1 in the content ledger. Independent human review remains Pending because no solve-first/source/hint-review completion evidence was supplied. Full signature fields and immutable editorial history are in the [content ledger](CONTENT-REVIEW-LEDGER.md); original-passage evidence is in the [source ledger](SOURCE-VERIFICATION-LEDGER.md). This matrix is the generated consolidated view of those exact final candidate records; regenerate it whenever content/digests or real review decisions change.
+
+| Question ID | Final draft SHA-256 | Final prospective g1 | Source-check status | Independent human review | Final owner approval |
+| --- | --- | --- | --- | --- | --- |
+| Q4 | `ec2b5a8986bb144ae53b2d7a2027cbd9e658a639dbcd53a122142ddf3e01044d` | `sha256:g1:6a2fbf8a697535b62306cbf4f2dc29270cf89ab40549c9ee6d8d7f961476a6df` | AI verified; human pending | Pending | Approved (2026-10-17) |
+| Q5 | `d4d96a424115ac6eb0c282d611e436e6a0955514b8240f49808bb6c40b30d09c` | `sha256:g1:88b880aaa208bb372735e81ecb95fc97547bdb5a2852d2765999d9af69cb0a5f` | AI verified; human pending | Pending | Approved (2026-10-17) |
+| Q6 | `a0b78d6236ecb974b7a8cefcbed7d8836035dfacd5d40ff035df3637157ec51c` | `sha256:g1:a51817b1730baf110075cc2a45b69d58f22981a1cd0e5a9607e0622ab61fb9a3` | AI verified; human pending | Pending | Approved (2026-10-17) |
+| Q10 | `8c962f7eb6caf0a0d18a033dba2e67659a818bf630bd2109bc009498ea027eea` | `sha256:g1:029ee148bcb0000a2f264c01d14705b3765e5eb04b73564d3b28ec41f7623ba6` | AI verified; human pending | Pending | Approved (2026-10-17) |
+| Q12 | `e2833f3d71d84fa7dd614c70d3a6ae334f5b0e58f7bd082d14dd82beabdd9186` | `sha256:g1:865c6477f6da9676310a0bd27f527e1235bc126bc79ce047ef941b501b46de3f` | AI verified; human pending | Pending | Approved (2026-10-17) |
+| Q18 | `0e66340a855d171e14a32b8aee5bcf42e2d60c880eb8ef4457ee057c404c5c59` | `sha256:g1:1e313528cde8ed5ee4614299e294e7cb14d2c76400a0c0f08740e7ba81623060` | AI verified; human pending | Pending | Approved (2026-10-17) |
+| Q25 | `f07fb75192da9ce8358d9678c42a8b0d05bb5469d1b02062e62dca15fc85bf17` | `sha256:g1:8f1c0147f61634b1bb89e36783fba00f8bbc7af31b4c7897f830ea9980a57c82` | AI verified; human pending | Pending | Approved (2026-10-17) |
+| Q26 | `b4a60ae9cc2c951eaacfaad104b8cd86db6b3eda0227b65c131c26d3234d29cb` | `sha256:g1:b5cf42e7cb2efd5b2267a922b3ae01260dda3aae9ed042b97fcda9720baa5377` | AI verified; human pending | Pending | Approved (2026-10-17) |
+| Q33 | `d4db6146a8fa2191cd296d019f925a9e6eeed7baee45cb04c9b559da58a34a47` | `sha256:g1:3472873a3c414db40859bb26ddaf5d6266b817fe655c9d5e54f9b66db7dfb0aa` | AI verified; human pending | Pending | Approved (2026-10-17) |
+| Q59 | `030e6095f6253a11c64019e9b7f7bba70748cb19d0042382ae98de3865bfe105` | `sha256:g1:3eac27881f33c58c0bea05c6a05a834c0287bc3bfc0dc6585fff6f5abf2faa46` | AI verified; human pending | Pending | Approved (2026-10-17) |
+
+Each record requires an independent solve-first answer and reasoning, source/hint/cumulative-leakage/all-option/set/vocabulary/arithmetic review, reviewer sign-off bound to the final draft hash and prospective g1, then a separate owner approval of that same exact content. Final owner approval is now recorded for all ten; independent review must still be documented. The owner approval alone does not establish completion of those review activities. D12 and the unresolved PDF-export regression remain release blockers; later integrated regression is still required. No publication, Phase 3 or deployment is authorized.

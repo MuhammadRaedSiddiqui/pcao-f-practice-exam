@@ -1,0 +1,31 @@
+# Guided Mode — local production-package verification
+
+19 October 2026. Evidence root: `test-results/guided-production-preflight-20261019-01/`. Only local builds, read-only hosting inspection and disposable-context browser QA were authorized. Existing evidence was not reused as an output destination.
+
+| Executed verification | Actual result |
+| --- | --- |
+| Focused packaging units before added service guard cases | **17/17**, two files; `packaging-units.log`. |
+| Full units after initial packaging | **849/849**, 45 files, one worker, 102.90 s; `full-units.log`. |
+| Full units after two additional hosted service-policy cases | **851/851**, 45 files, one worker, 97.96 s, exit 0; `full-units-final.log`. Includes 13 new packaging cases and six prior local packaging cases. No original assertions/deadlines/retries changed. |
+| TypeScript | Final **pass**, `typecheck-production-confirmed.log`; earlier unsupported property and implicit server-array failures retained in their original logs. |
+| Initial standalone release build | Pass, genuine production compilation, `build-enabled.log`; later confirmation standalone `build-closeout.log` emitted matching application bytes. Existing chunk-size and ineffective dynamic-import warnings retained. |
+| Initial combined audit build | Mode said production but diagnostic `resolve-config-diagnostic.json` proves NODE_ENV was set to development by config inspection. Its larger app bundles and initial browser **12/12** are preserved, not represented as production-compilation acceptance. Initial manifest generation correctly rejected its fallback mismatch. |
+| Corrected ordinary-disabled + enabled production builds | **Both pass**, `build-production-confirmed.log`, [build-audit-confirmed.json](../../test-results/guided-production-preflight-20261019-01/build-audit-confirmed.json). Explicit production NODE_ENV and `isProduction:true` verified; service values compared equal internally, no service defines overwritten. |
+| Corrected browser / HTTP / fallback | **12/12**, **one worker, zero retries**, 43.2 s, clean exit/teardown; [browser-confirmed.json](../../test-results/guided-production-preflight-20261019-01/browser-confirmed.json), `browser-confirmed.log`, separate `browser-confirmed-artifacts/`. |
+| Hosted wrapper outside a verified Vercel environment | **Expected rejection**, exit 1, `hosted-build-guard.log`; no hosted build/deployment occurred. Profile/project/origin/service failures are also covered in new units. |
+| Manifest generation | Pass, `manifest-generation-confirmed.json`; enabled and selected fallback trees are identical, nine files each. Original rejected-generation log retained separately. |
+
+The corrected 12 browser checks cover both exact version asset hashes/JSON MIME/one-year immutable cache, unknown asset genuine uncached 404, current Q26 triple selection/progressive keyboard hints/save/lock/reload, 320/390/768/1366 table/keyboard/layout/touch-target sizing, both controlled frozen versions with unavailable remote assets/reload and selected fallback JS/CSS bytes on the **same origin**, ordinary disabled/no runtime override, slash routes/reload and missing-session recovery. They use fresh disposable Playwright contexts, with external requests aborted. No private user records, real account credentials or production services were exercised. The fallback test does not transfer data to another origin or establish real production history.
+
+The first relative Playwright output paths resolved beneath `tests/production-guided/test-results/`, also a new ignored directory. All four result/artifact outputs were preserved there and copied byte-identically to the canonical evidence root; `capture-routing-copy.json` records hashes. Configuration now uses absolute evidence paths. This is an output-location correction only; no historical image was overwritten and no test was rerun solely for that correction. Original JSON paths still identify the retained original artifacts.
+
+Built-in browser observation at **http://127.0.0.1:4263/guided** shows sixty compatible guides, enabled Start, heading focus and existing Sign in/Create account controls retained. Captures: `iab-production-package-landing.jpg` and its accessibility tree. This did not log in, start or mutate a Mock, read raw browser storage or access any private profile records. It is a UI observation, not a native screen-reader result. The earlier loopback-only 4261 build is left unchanged.
+
+## Artifact and exclusion checks
+
+- Accepted 1.0.0, 1.1.0, catalog and original candidate manifest hashes remain exact. Only the two approved guidance JSON payloads are emitted; no draft authoring files/catalog metadata endpoint is emitted. Default ordinary output has no guidance payload or entry.
+- The allowlisted `upload-verified` source workspace has **74 files**, excluding env files, project links, tests, fixtures, screenshots, docs/evidence and local outputs. The manifest independently hashes all selected staged files. Earlier upload preparations remain unselected historical evidence.
+- Narrow bundled-marker checks found no known synthetic fixture IDs, test import endpoints or retained pilot/test origins. Source input/output inventories, not a claim of exhaustive arbitrary-string detection, establish what was packaged. Enabled-service endpoint validity is guarded on future hosting; actual remote values remain unverified.
+- Normal app source, banks, educational/version bindings, session/reader/persistence/protection/Mock contracts and original Phase 7 acceptance remain unchanged. Only existing `package.json` and its exact authorized preservation pin change; old pins remain in the preflight baseline. New build/test/docs files are separately inventoried. No old operational assertion or deadline was weakened.
+
+The prior **302/302** normal-app browser matrix, account/recovery/PDF/SDK evidence and historical failures remain separate prior-artifact evidence; they were not added to this run's count or rerun unnecessarily. The two new full passes do not fix or accept historical R1, and this local run does not close R2–R4, native/manual or actual-host requirements. See [updated decisions](GUIDED-MODE-PRODUCTION-PREFLIGHT-RISKS-AND-DECISIONS.md).
